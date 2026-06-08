@@ -23,4 +23,14 @@ describe('AuthGuard', () => {
     )
     expect(screen.getByText('secret')).toBeInTheDocument()
   })
+
+  it('blocks access when authenticated but email is not on the allowlist', () => {
+    render(
+      <AuthGuard auth={{ accessToken: 'tok', email: 'stranger@example.com', signIn: vi.fn() }}>
+        <div>secret</div>
+      </AuthGuard>
+    )
+    expect(screen.getByText('このアカウントはアクセスできません')).toBeInTheDocument()
+    expect(screen.queryByText('secret')).not.toBeInTheDocument()
+  })
 })

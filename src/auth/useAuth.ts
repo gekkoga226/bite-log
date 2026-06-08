@@ -24,11 +24,19 @@ export function useAuth() {
     const client = window.google.accounts.oauth2.initTokenClient({
       client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
       scope: SCOPES,
-      callback: async (resp: { access_token: string }) => {
+      callback: async (resp: { access_token?: string; error?: string }) => {
+        // GISがエラー（キャンセル等）を返した場合は何もしない
+        if (resp.error || !resp.access_token) {
+          return
+        }
         const token = resp.access_token
         const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
           headers: { Authorization: `Bearer ${token}` },
         })
+        if (!userRes.ok) {
+          // メール取得に失敗したらトークンを保存しない（不完全な認証状態を避ける）
+          return
+        }
         const user = (await userRes.json()) as { email: string }
         setState({ accessToken: token, email: user.email })
       },
