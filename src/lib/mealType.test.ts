@@ -15,4 +15,7 @@ describe('detectMealType', () => {
     expect(detectMealType(new Date(2026, 5, 4, 15, 0))).toBe('間食')
     expect(detectMealType(new Date(2026, 5, 4, 23, 0))).toBe('間食')
   })
+  it('returns 間食 at the 22:00 boundary (just after 夕食)', () => {
+    expect(detectMealType(new Date(2026, 5, 4, 22, 0))).toBe('間食')
+  })
 })
