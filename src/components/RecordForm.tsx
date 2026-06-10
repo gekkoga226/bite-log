@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { MealType } from '../types'
 
 export interface RecordFormValues {
@@ -16,6 +16,28 @@ interface Props {
 
 const TYPES: MealType[] = ['朝食', '昼食', '夕食', '間食']
 
+function PhotoThumb({ file, onRemove }: { file: File; onRemove: () => void }) {
+  const [url, setUrl] = useState('')
+  useEffect(() => {
+    const u = URL.createObjectURL(file)
+    setUrl(u)
+    return () => URL.revokeObjectURL(u)
+  }, [file])
+  return (
+    <div className="relative w-16 h-16 shrink-0">
+      {url && <img src={url} alt="" className="w-16 h-16 object-cover rounded-lg" />}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center leading-none"
+        aria-label="削除"
+      >
+        ✕
+      </button>
+    </div>
+  )
+}
+
 export function RecordForm({ initialMealType, submitting, onSubmit }: Props) {
   const [mealType, setMealType] = useState<MealType>(initialMealType)
   const [memo, setMemo] = useState('')
@@ -23,9 +45,10 @@ export function RecordForm({ initialMealType, submitting, onSubmit }: Props) {
   const [files, setFiles] = useState<File[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
 
-  function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (file) setFiles((prev) => [...prev, file])
+  function handleAddPhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const newFiles = Array.from(e.target.files ?? [])
+    if (newFiles.length > 0) setFiles((prev) => [...prev, ...newFiles])
+    // リセットしておくことで同じファイルを再選択可能に
     if (inputRef.current) inputRef.current.value = ''
   }
 
@@ -52,29 +75,30 @@ export function RecordForm({ initialMealType, submitting, onSubmit }: Props) {
 
       <div>
         <label className="text-xs text-gray-500">写真（任意・複数可）</label>
-        <div className="mt-1 flex flex-col gap-1">
-          {files.map((f, i) => (
-            <div key={i} className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
-              <span className="text-xs text-gray-700 flex-1 truncate">{f.name}</span>
-              <button
-                type="button"
-                onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
-                className="text-gray-400 hover:text-red-400 active:text-red-500 text-sm leading-none"
-                aria-label="削除"
-              >
-                ✕
-              </button>
+        <div className="mt-1">
+          {files.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {files.map((f, i) => (
+                <PhotoThumb
+                  key={i}
+                  file={f}
+                  onRemove={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
+                />
+              ))}
             </div>
-          ))}
-          <label className="inline-flex items-center gap-1 cursor-pointer mt-0.5">
+          )}
+          <label className="inline-flex items-center gap-1 cursor-pointer">
             <input
               ref={inputRef}
               type="file"
               accept="image/*"
-              onChange={handleAddPhoto}
+              multiple
+              onChange={handleAddPhotos}
               className="hidden"
             />
-            <span className="text-sm text-brand font-medium">+ 写真を追加</span>
+            <span className="text-sm text-brand font-medium">
+              {files.length === 0 ? '+ 写真を選択' : '+ さらに追加'}
+            </span>
           </label>
         </div>
       </div>
