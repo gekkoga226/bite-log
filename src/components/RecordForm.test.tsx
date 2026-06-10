@@ -6,7 +6,7 @@ describe('RecordForm', () => {
   it('submits with the entered memo and selected meal type', () => {
     const onSubmit = vi.fn()
     render(<RecordForm initialMealType="昼食" submitting={false} onSubmit={onSubmit} />)
-    fireEvent.change(screen.getByPlaceholderText(/牛丼/), { target: { value: 'ラーメン' } })
+    fireEvent.change(screen.getByPlaceholderText(/牛丼/, { exact: false }), { target: { value: 'ラーメン' } })
     fireEvent.click(screen.getByText('記録する'))
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({ memo: 'ラーメン', mealType: '昼食', files: [] }),

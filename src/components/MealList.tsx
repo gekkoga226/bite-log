@@ -3,6 +3,17 @@ import type { MealRecord, MealType } from '../types'
 const ICONS: Record<MealType, string> = { 朝食: '🌅', 昼食: '☀️', 夕食: '🌙', 間食: '🍪' }
 const ORDER: MealType[] = ['朝食', '昼食', '夕食', '間食']
 
+function mealLabel(meal: MealRecord): string {
+  if (meal.memo) return meal.memo
+  if (meal.note) return meal.note
+  if (meal.comment) {
+    // comment format: "食材A, 食材B : 評価..." → 食材リスト部分だけ表示
+    const foodPart = meal.comment.split(':')[0].trim()
+    if (foodPart) return foodPart
+  }
+  return '（メモなし）'
+}
+
 interface Props {
   meals: MealRecord[]
   onDelete?: (meal: MealRecord) => void
@@ -40,7 +51,7 @@ export function MealList({ meals, onDelete }: Props) {
               <div key={meal.timestamp} className="flex items-center py-1.5 pl-12 pr-1 gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-gray-700 leading-snug truncate">
-                    {meal.memo || meal.note || '（メモなし）'}
+                    {mealLabel(meal)}
                   </div>
                   {meal.memo && meal.note && (
                     <div className="text-[11px] text-gray-400 leading-snug truncate">{meal.note}</div>

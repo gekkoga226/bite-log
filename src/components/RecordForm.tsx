@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import type { MealType } from '../types'
 
 export interface RecordFormValues {
@@ -21,6 +21,13 @@ export function RecordForm({ initialMealType, submitting, onSubmit }: Props) {
   const [memo, setMemo] = useState('')
   const [note, setNote] = useState('')
   const [files, setFiles] = useState<File[]>([])
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) setFiles((prev) => [...prev, file])
+    if (inputRef.current) inputRef.current.value = ''
+  }
 
   return (
     <form
@@ -44,17 +51,32 @@ export function RecordForm({ initialMealType, submitting, onSubmit }: Props) {
       </div>
 
       <div>
-        <label className="text-xs text-gray-500">写真（複数選択可・任意）</label>
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-          className="block mt-1 text-sm"
-        />
-        {files.length > 0 && (
-          <div className="text-xs text-gray-500 mt-1">{files.length}枚選択中</div>
-        )}
+        <label className="text-xs text-gray-500">写真（任意・複数可）</label>
+        <div className="mt-1 flex flex-col gap-1">
+          {files.map((f, i) => (
+            <div key={i} className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
+              <span className="text-xs text-gray-700 flex-1 truncate">{f.name}</span>
+              <button
+                type="button"
+                onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
+                className="text-gray-400 hover:text-red-400 active:text-red-500 text-sm leading-none"
+                aria-label="削除"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <label className="inline-flex items-center gap-1 cursor-pointer mt-0.5">
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAddPhoto}
+              className="hidden"
+            />
+            <span className="text-sm text-brand font-medium">+ 写真を追加</span>
+          </label>
+        </div>
       </div>
 
       <div>
