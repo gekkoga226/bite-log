@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import type { MealType } from '../types'
+import { toDateString } from '../lib/date'
 
 export interface RecordFormValues {
   mealType: MealType
   memo: string
   note: string
   files: File[]
+  date: string
+  people: number
 }
 
 interface Props {
@@ -15,6 +18,7 @@ interface Props {
 }
 
 const TYPES: MealType[] = ['朝食', '昼食', '夕食', '間食']
+const TODAY = toDateString(new Date())
 
 function PhotoThumb({ file, onRemove }: { file: File; onRemove: () => void }) {
   const [url, setUrl] = useState('')
@@ -43,20 +47,34 @@ export function RecordForm({ initialMealType, submitting, onSubmit }: Props) {
   const [memo, setMemo] = useState('')
   const [note, setNote] = useState('')
   const [files, setFiles] = useState<File[]>([])
+  const [date, setDate] = useState(TODAY)
+  const [people, setPeople] = useState(1)
   const inputRef = useRef<HTMLInputElement>(null)
 
   function handleAddPhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const newFiles = Array.from(e.target.files ?? [])
     if (newFiles.length > 0) setFiles((prev) => [...prev, ...newFiles])
-    // リセットしておくことで同じファイルを再選択可能に
     if (inputRef.current) inputRef.current.value = ''
   }
 
   return (
     <form
       className="flex flex-col gap-4"
-      onSubmit={(e) => { e.preventDefault(); onSubmit({ mealType, memo, note, files }) }}
+      onSubmit={(e) => { e.preventDefault(); onSubmit({ mealType, memo, note, files, date, people }) }}
     >
+      {/* 日付 */}
+      <div>
+        <label className="text-xs text-gray-500">日付</label>
+        <input
+          type="date"
+          value={date}
+          max={TODAY}
+          onChange={(e) => setDate(e.target.value)}
+          className="w-full mt-1 bg-gray-100 rounded-lg px-3 py-2 text-sm"
+        />
+      </div>
+
+      {/* 食事タイプ */}
       <div>
         <label className="text-xs text-gray-500">食事タイプ</label>
         <div className="flex gap-2 mt-1">
@@ -73,6 +91,7 @@ export function RecordForm({ initialMealType, submitting, onSubmit }: Props) {
         </div>
       </div>
 
+      {/* 写真 */}
       <div>
         <label className="text-xs text-gray-500">写真（任意・複数可）</label>
         <div className="mt-1">
@@ -103,6 +122,7 @@ export function RecordForm({ initialMealType, submitting, onSubmit }: Props) {
         </div>
       </div>
 
+      {/* 食事内容メモ */}
       <div>
         <label className="text-xs text-gray-500">食事内容メモ</label>
         <textarea
@@ -114,6 +134,7 @@ export function RecordForm({ initialMealType, submitting, onSubmit }: Props) {
         />
       </div>
 
+      {/* 備考 */}
       <div>
         <label className="text-xs text-gray-500">備考（店名・メニュー名など）</label>
         <textarea
@@ -123,6 +144,31 @@ export function RecordForm({ initialMealType, submitting, onSubmit }: Props) {
           rows={2}
           className="w-full mt-1 bg-gray-100 rounded-lg px-3 py-2 text-sm resize-none"
         />
+      </div>
+
+      {/* 人数 */}
+      <div>
+        <label className="text-xs text-gray-500">シェア人数（飲み会・割り勘など）</label>
+        <div className="flex items-center gap-3 mt-1">
+          <button
+            type="button"
+            onClick={() => setPeople((p) => Math.max(1, p - 1))}
+            className="w-9 h-9 rounded-full bg-gray-100 text-gray-600 text-xl font-bold flex items-center justify-center active:bg-gray-200"
+          >
+            −
+          </button>
+          <span className="text-lg font-semibold w-6 text-center tabular-nums">{people}</span>
+          <button
+            type="button"
+            onClick={() => setPeople((p) => Math.min(20, p + 1))}
+            className="w-9 h-9 rounded-full bg-gray-100 text-gray-600 text-xl font-bold flex items-center justify-center active:bg-gray-200"
+          >
+            ＋
+          </button>
+          <span className="text-xs text-gray-500">
+            {people === 1 ? '自分だけ' : `${people}人でシェア → カロリーを${people}等分`}
+          </span>
+        </div>
       </div>
 
       <button

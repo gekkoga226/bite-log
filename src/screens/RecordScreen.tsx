@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { RecordForm, type RecordFormValues } from '../components/RecordForm'
 import { detectMealType } from '../lib/mealType'
-import { toDateString } from '../lib/date'
 import { uploadImage } from '../services/drive'
 import { calculateNutrition } from '../services/calculate'
 import { appendMeal } from '../services/sheets'
@@ -14,10 +13,26 @@ interface Props {
   onCancel: () => void
 }
 
+interface ResultState {
+  nutrition: Nutrition
+  total: Nutrition | null  // null when people === 1
+  people: number
+}
+
+function divideNutrition(n: Nutrition, people: number): Nutrition {
+  return {
+    calories: Math.round(n.calories / people),
+    protein: Math.round(n.protein / people),
+    fat: Math.round(n.fat / people),
+    carbs: Math.round(n.carbs / people),
+    comment: n.comment,
+  }
+}
+
 export function RecordScreen({ token, onDone, onCancel }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [result, setResult] = useState<Nutrition | null>(null)
+  const [result, setResult] = useState<ResultState | null>(null)
 
   async function handleSubmit(values: RecordFormValues) {
     setSubmitting(true)
@@ -26,30 +41,31 @@ export function RecordScreen({ token, onDone, onCancel }: Props) {
       let photoUrl = ''
       let images: { base64: string; mimeType: string }[] = []
       if (values.files.length > 0) {
-        // 写真を順番に圧縮（HEIC→JPEG変換・サイズ縮小）
         images = await compressImages(values.files)
-        // Driveアップロードは任意（失敗してもカロリー計算は続行）
         const urls = await Promise.all(
           values.files.map((f) => uploadImage(token, f).catch(() => '')),
         )
         photoUrl = urls.filter(Boolean).join(', ')
       }
 
-      const nutrition = await calculateNutrition({
-        memo: values.memo, note: values.note, images,
-      })
+      const total = await calculateNutrition({ memo: values.memo, note: values.note, images })
+      const nutrition = values.people > 1 ? divideNutrition(total, values.people) : total
 
-      const now = new Date()
       await appendMeal(token, {
-        timestamp: now.toISOString(),
-        date: toDateString(now),
+        timestamp: new Date().toISOString(),
+        date: values.date,
         mealType: values.mealType,
         photoUrl,
         memo: values.memo,
         note: values.note,
         ...nutrition,
       })
-      setResult(nutrition)
+
+      setResult({
+        nutrition,
+        total: values.people > 1 ? total : null,
+        people: values.people,
+      })
     } catch (e) {
       setError(`エラー: ${e instanceof Error ? e.message : String(e)}`)
     } finally {
@@ -58,17 +74,27 @@ export function RecordScreen({ token, onDone, onCancel }: Props) {
   }
 
   if (result) {
+    const { nutrition, total, people } = result
     return (
       <div className="p-4 flex flex-col gap-4">
         <div className="rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(135deg,#007AFF,#5856D6)' }}>
-          <div className="text-xs opacity-80 mb-1">計算結果</div>
-          <div className="text-4xl font-bold">{result.calories} <span className="text-sm font-normal">kcal</span></div>
-          <div className="flex gap-2 mt-3 text-xs font-semibold">
-            <span className="flex-1 bg-white/20 rounded p-1.5 text-center">P {result.protein}g</span>
-            <span className="flex-1 bg-white/20 rounded p-1.5 text-center">F {result.fat}g</span>
-            <span className="flex-1 bg-white/20 rounded p-1.5 text-center">C {result.carbs}g</span>
+          <div className="text-xs opacity-80 mb-1">
+            {people > 1 ? `計算結果（${people}人でシェア）` : '計算結果'}
           </div>
-          {result.comment && <div className="text-xs opacity-90 mt-3">{result.comment}</div>}
+          {total && (
+            <div className="text-xs opacity-70 mb-1">
+              全体 {total.calories} kcal ÷ {people}人
+            </div>
+          )}
+          <div className="text-4xl font-bold">
+            {nutrition.calories} <span className="text-sm font-normal">kcal</span>
+          </div>
+          <div className="flex gap-2 mt-3 text-xs font-semibold">
+            <span className="flex-1 bg-white/20 rounded p-1.5 text-center">P {nutrition.protein}g</span>
+            <span className="flex-1 bg-white/20 rounded p-1.5 text-center">F {nutrition.fat}g</span>
+            <span className="flex-1 bg-white/20 rounded p-1.5 text-center">C {nutrition.carbs}g</span>
+          </div>
+          {nutrition.comment && <div className="text-xs opacity-90 mt-3">{nutrition.comment}</div>}
         </div>
         <button onClick={onDone} className="bg-brand text-white rounded-xl py-3 font-semibold">完了</button>
       </div>
@@ -76,7 +102,7 @@ export function RecordScreen({ token, onDone, onCancel }: Props) {
   }
 
   return (
-    <div className="p-4">
+    <div className="p-4 pb-8">
       <div className="flex items-center gap-2 mb-4">
         <button
           onClick={onCancel}
