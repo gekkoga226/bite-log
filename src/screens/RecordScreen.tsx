@@ -48,7 +48,7 @@ export function RecordScreen({ token, onDone }: Props) {
       })
       setResult(nutrition)
     } catch (e) {
-      setError('計算または保存に失敗しました。もう一度お試しください。')
+      setError(`エラー: ${e instanceof Error ? e.message : String(e)}`)
     } finally {
       setSubmitting(false)
     }
