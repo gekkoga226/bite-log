@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchMeals } from '../services/sheets'
+import { fetchMeals, deleteMeal } from '../services/sheets'
 import { aggregateDay } from '../lib/aggregate'
 import { toDateString } from '../lib/date'
 import { DEFAULT_GOALS } from '../lib/goals'
@@ -18,6 +18,7 @@ function greeting(d: Date): string {
 export function TodayScreen({ token, reloadKey }: { token: string; reloadKey: number }) {
   const [meals, setMeals] = useState<MealRecord[]>([])
   const [loading, setLoading] = useState(true)
+  const [localReload, setLocalReload] = useState(0)
   const today = toDateString(new Date())
 
   useEffect(() => {
@@ -28,7 +29,18 @@ export function TodayScreen({ token, reloadKey }: { token: string; reloadKey: nu
       .catch(() => { if (active) setMeals([]) })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [token, today, reloadKey])
+  }, [token, today, reloadKey, localReload])
+
+  async function handleDelete(meal: MealRecord) {
+    const label = meal.memo || meal.note || meal.mealType
+    if (!window.confirm(`「${label}」を削除しますか？`)) return
+    try {
+      await deleteMeal(token, meal.timestamp)
+      setLocalReload((n) => n + 1)
+    } catch (e) {
+      alert(`削除に失敗しました: ${e instanceof Error ? e.message : String(e)}`)
+    }
+  }
 
   const totals = aggregateDay(meals, today)
 
@@ -46,7 +58,7 @@ export function TodayScreen({ token, reloadKey }: { token: string; reloadKey: nu
             fat={{ value: totals.fat, target: DEFAULT_GOALS.fat }}
             carbs={{ value: totals.carbs, target: DEFAULT_GOALS.carbs }}
           />
-          <MealList meals={meals} />
+          <MealList meals={meals} onDelete={handleDelete} />
         </>
       )}
     </div>

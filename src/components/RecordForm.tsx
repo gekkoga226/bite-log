@@ -55,21 +55,23 @@ export function RecordForm({ initialMealType, submitting, onSubmit }: Props) {
 
       <div>
         <label className="text-xs text-gray-500">食事内容メモ</label>
-        <input
+        <textarea
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
-          placeholder="例: 牛丼"
-          className="w-full mt-1 bg-gray-100 rounded-lg px-3 py-2 text-sm"
+          placeholder={'例:\n・牛丼（並）\n・みそ汁'}
+          rows={3}
+          className="w-full mt-1 bg-gray-100 rounded-lg px-3 py-2 text-sm resize-none"
         />
       </div>
 
       <div>
         <label className="text-xs text-gray-500">備考（店名・メニュー名など）</label>
-        <input
+        <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="例: セブンイレブン サラダチキン"
-          className="w-full mt-1 bg-gray-100 rounded-lg px-3 py-2 text-sm"
+          placeholder={'例:\nセブンイレブン\nサラダチキン 115kcal'}
+          rows={2}
+          className="w-full mt-1 bg-gray-100 rounded-lg px-3 py-2 text-sm resize-none"
         />
       </div>
 

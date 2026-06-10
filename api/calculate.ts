@@ -1,9 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const PROMPT = `あなたは栄養士です。提供された食事の写真とメモから、1食分の栄養を推定してください。
-備考に店名・メニュー名・正確なカロリーがある場合はそれを最優先で反映してください。
-必ず以下のJSON形式のみで答えてください（説明文やコードフェンスは不要）:
-{"calories": 数値, "protein": 数値(g), "fat": 数値(g), "carbs": 数値(g), "comment": "一言コメント(日本語50字以内)"}`
+備考に店名・メニュー名がある場合は公式の栄養成分値を最優先で使用してください。
+commentは日本語50字以内の一言コメントにしてください。`
 
 export default async function handler(req: any, res: any): Promise<void> {
   if (req.method !== 'POST') {
@@ -18,7 +17,24 @@ export default async function handler(req: any, res: any): Promise<void> {
 
   const body = req.body as { memo?: string; note?: string; imageBase64?: string; mimeType?: string }
   const genAI = new GoogleGenerativeAI(apiKey)
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    generationConfig: {
+      temperature: 0,
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: 'OBJECT' as any,
+        properties: {
+          calories: { type: 'NUMBER' as any },
+          protein: { type: 'NUMBER' as any },
+          fat: { type: 'NUMBER' as any },
+          carbs: { type: 'NUMBER' as any },
+          comment: { type: 'STRING' as any },
+        },
+        required: ['calories', 'protein', 'fat', 'carbs', 'comment'],
+      } as any,
+    },
+  })
 
   const parts: any[] = [
     { text: PROMPT },
