@@ -4,8 +4,7 @@ import { parseNutrition } from '../lib/parseGemini'
 export interface CalculateInput {
   memo: string
   note: string
-  imageBase64?: string
-  mimeType?: string
+  images?: { base64: string; mimeType: string }[]
 }
 
 export async function calculateNutrition(input: CalculateInput): Promise<Nutrition> {
@@ -15,7 +14,14 @@ export async function calculateNutrition(input: CalculateInput): Promise<Nutriti
     body: JSON.stringify(input),
   })
   if (!res.ok) {
-    throw new Error(`calculate failed: ${res.status}`)
+    let detail = ''
+    try {
+      const body = (await res.json()) as { error?: string }
+      detail = body.error ? ` - ${body.error}` : ''
+    } catch {
+      /* ignore */
+    }
+    throw new Error(`calculate failed: ${res.status}${detail}`)
   }
   const data = (await res.json()) as { raw: string }
   return parseNutrition(data.raw)

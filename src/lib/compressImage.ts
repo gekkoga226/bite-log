@@ -33,3 +33,14 @@ export function compressImage(file: File): Promise<{ base64: string; mimeType: s
     img.src = objectUrl
   })
 }
+
+/** 複数画像を順番に圧縮する */
+export async function compressImages(
+  files: File[],
+): Promise<{ base64: string; mimeType: string }[]> {
+  const out: { base64: string; mimeType: string }[] = []
+  for (const file of files) {
+    out.push(await compressImage(file))
+  }
+  return out
+}

@@ -5,7 +5,7 @@ import { toDateString } from '../lib/date'
 import { uploadImage } from '../services/drive'
 import { calculateNutrition } from '../services/calculate'
 import { appendMeal } from '../services/sheets'
-import { compressImage } from '../lib/compressImage'
+import { compressImages } from '../lib/compressImage'
 import type { Nutrition } from '../types'
 
 interface Props {
@@ -24,17 +24,19 @@ export function RecordScreen({ token, onDone, onCancel }: Props) {
     setError(null)
     try {
       let photoUrl = ''
-      let imageBase64: string | undefined
-      let mimeType: string | undefined
-      if (values.file) {
-        const compressed = await compressImage(values.file)
-        imageBase64 = compressed.base64
-        mimeType = compressed.mimeType
-        photoUrl = await uploadImage(token, values.file).catch(() => '')
+      let images: { base64: string; mimeType: string }[] = []
+      if (values.files.length > 0) {
+        // 写真を順番に圧縮（HEIC→JPEG変換・サイズ縮小）
+        images = await compressImages(values.files)
+        // Driveアップロードは任意（失敗してもカロリー計算は続行）
+        const urls = await Promise.all(
+          values.files.map((f) => uploadImage(token, f).catch(() => '')),
+        )
+        photoUrl = urls.filter(Boolean).join(', ')
       }
 
       const nutrition = await calculateNutrition({
-        memo: values.memo, note: values.note, imageBase64, mimeType,
+        memo: values.memo, note: values.note, images,
       })
 
       const now = new Date()

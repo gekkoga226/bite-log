@@ -5,7 +5,7 @@ export interface RecordFormValues {
   mealType: MealType
   memo: string
   note: string
-  file: File | null
+  files: File[]
 }
 
 interface Props {
@@ -20,12 +20,12 @@ export function RecordForm({ initialMealType, submitting, onSubmit }: Props) {
   const [mealType, setMealType] = useState<MealType>(initialMealType)
   const [memo, setMemo] = useState('')
   const [note, setNote] = useState('')
-  const [file, setFile] = useState<File | null>(null)
+  const [files, setFiles] = useState<File[]>([])
 
   return (
     <form
       className="flex flex-col gap-4"
-      onSubmit={(e) => { e.preventDefault(); onSubmit({ mealType, memo, note, file }) }}
+      onSubmit={(e) => { e.preventDefault(); onSubmit({ mealType, memo, note, files }) }}
     >
       <div>
         <label className="text-xs text-gray-500">食事タイプ</label>
@@ -44,13 +44,17 @@ export function RecordForm({ initialMealType, submitting, onSubmit }: Props) {
       </div>
 
       <div>
-        <label className="text-xs text-gray-500">写真（任意）</label>
+        <label className="text-xs text-gray-500">写真（複数選択可・任意）</label>
         <input
           type="file"
           accept="image/*"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          multiple
+          onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
           className="block mt-1 text-sm"
         />
+        {files.length > 0 && (
+          <div className="text-xs text-gray-500 mt-1">{files.length}枚選択中</div>
+        )}
       </div>
 
       <div>
