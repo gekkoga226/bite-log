@@ -5,7 +5,7 @@ import { toDateString } from '../lib/date'
 import { uploadImage } from '../services/drive'
 import { calculateNutrition } from '../services/calculate'
 import { appendMeal } from '../services/sheets'
-import { fileToDataUrl, stripDataUrlPrefix } from '../lib/fileToBase64'
+import { compressImage } from '../lib/compressImage'
 import type { Nutrition } from '../types'
 
 interface Props {
@@ -26,9 +26,9 @@ export function RecordScreen({ token, onDone }: Props) {
       let imageBase64: string | undefined
       let mimeType: string | undefined
       if (values.file) {
-        const dataUrl = await fileToDataUrl(values.file)
-        imageBase64 = stripDataUrlPrefix(dataUrl)
-        mimeType = values.file.type
+        const compressed = await compressImage(values.file)
+        imageBase64 = compressed.base64
+        mimeType = compressed.mimeType
         photoUrl = await uploadImage(token, values.file)
       }
 
