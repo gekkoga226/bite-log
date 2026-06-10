@@ -19,6 +19,7 @@ interface ResultState {
   total: Nutrition | null
   people: number
   fitSynced: boolean
+  fitError: string
   mealType: MealType
   timestamp: string
 }
@@ -67,13 +68,16 @@ export function RecordScreen({ token, onDone, onCancel }: Props) {
       })
 
       // Google Fit 同期（失敗しても記録は成功扱い）
-      const fitSynced = await logNutritionToFit(token, {
-        timestamp,
-        mealType: values.mealType,
-        ...nutrition,
-      }).then(() => true).catch(() => false)
+      let fitSynced = false
+      let fitError = ''
+      try {
+        await logNutritionToFit(token, { timestamp, mealType: values.mealType, ...nutrition })
+        fitSynced = true
+      } catch (e) {
+        fitError = e instanceof Error ? e.message : String(e)
+      }
 
-      setResult({ nutrition, total: values.people > 1 ? total : null, people: values.people, fitSynced, mealType: values.mealType, timestamp })
+      setResult({ nutrition, total: values.people > 1 ? total : null, people: values.people, fitSynced, fitError, mealType: values.mealType, timestamp })
     } catch (e) {
       setError(`エラー: ${e instanceof Error ? e.message : String(e)}`)
     } finally {
@@ -82,7 +86,7 @@ export function RecordScreen({ token, onDone, onCancel }: Props) {
   }
 
   if (result) {
-    const { nutrition, total, people, fitSynced } = result
+    const { nutrition, total, people, fitSynced, fitError } = result
     return (
       <div className="p-4 flex flex-col gap-4">
         <div className="rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(135deg,#007AFF,#5856D6)' }}>
@@ -106,13 +110,16 @@ export function RecordScreen({ token, onDone, onCancel }: Props) {
         </div>
 
         {/* Google Fit 同期ステータス */}
-        <div className={`flex items-center gap-2 text-sm rounded-xl px-4 py-3 ${fitSynced ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-400'}`}>
-          <span>{fitSynced ? '✓' : '○'}</span>
-          <span>
-            {fitSynced
-              ? 'Google Fit に同期しました'
-              : 'Google Fit 未同期（再ログインで有効になります）'}
-          </span>
+        <div className={`flex flex-col gap-1 text-sm rounded-xl px-4 py-3 ${fitSynced ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+          <div className="flex items-center gap-2">
+            <span>{fitSynced ? '✓' : '✗'}</span>
+            <span className="font-medium">
+              {fitSynced ? 'Google Fit に同期しました' : 'Google Fit 同期失敗'}
+            </span>
+          </div>
+          {!fitSynced && fitError && (
+            <div className="text-xs font-mono break-all opacity-80 pl-5">{fitError}</div>
+          )}
         </div>
 
         <button onClick={onDone} className="bg-brand text-white rounded-xl py-3 font-semibold">完了</button>

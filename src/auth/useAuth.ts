@@ -42,7 +42,7 @@ export function useAuth() {
         setState({ accessToken: token, email: user.email })
       },
     })
-    client.requestAccessToken()
+    client.requestAccessToken({ prompt: 'consent' })
   }, [])
 
   const signOut = useCallback(() => {
