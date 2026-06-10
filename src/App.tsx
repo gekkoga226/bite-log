@@ -18,6 +18,7 @@ export default function App() {
           <RecordScreen
             token={auth.accessToken!}
             onDone={() => { setRecording(false); setReloadKey((k) => k + 1); setTab('today') }}
+            onCancel={() => setRecording(false)}
           />
         ) : (
           <>

@@ -11,9 +11,10 @@ import type { Nutrition } from '../types'
 interface Props {
   token: string
   onDone: () => void
+  onCancel: () => void
 }
 
-export function RecordScreen({ token, onDone }: Props) {
+export function RecordScreen({ token, onDone, onCancel }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<Nutrition | null>(null)
@@ -29,7 +30,7 @@ export function RecordScreen({ token, onDone }: Props) {
         const compressed = await compressImage(values.file)
         imageBase64 = compressed.base64
         mimeType = compressed.mimeType
-        photoUrl = await uploadImage(token, values.file)
+        photoUrl = await uploadImage(token, values.file).catch(() => '')
       }
 
       const nutrition = await calculateNutrition({
@@ -74,7 +75,16 @@ export function RecordScreen({ token, onDone }: Props) {
 
   return (
     <div className="p-4">
-      <h2 className="text-lg font-bold mb-4">食事を記録</h2>
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          onClick={onCancel}
+          className="text-gray-500 hover:text-gray-700 active:text-gray-900 p-1 -ml-1 text-xl leading-none"
+          aria-label="戻る"
+        >
+          ←
+        </button>
+        <h2 className="text-lg font-bold">食事を記録</h2>
+      </div>
       {error && (
         <div className="bg-red-50 text-red-600 text-sm rounded-lg p-3 mb-3">{error}</div>
       )}
