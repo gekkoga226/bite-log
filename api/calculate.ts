@@ -64,11 +64,23 @@ export default async function handler(req: any, res: any): Promise<void> {
     parts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } })
   }
 
-  try {
-    const result = await model.generateContent(parts)
-    const text = result.response.text()
-    res.status(200).json({ raw: text })
-  } catch (e) {
-    res.status(502).json({ error: String(e) })
+  const MAX_ATTEMPTS = 3
+  let lastError: unknown
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    try {
+      const result = await model.generateContent(parts)
+      res.status(200).json({ raw: result.response.text() })
+      return
+    } catch (e) {
+      lastError = e
+      const msg = String(e)
+      const isRetryable = msg.includes('503') || msg.includes('Service Unavailable') || msg.includes('high demand') || msg.includes('overloaded')
+      if (attempt < MAX_ATTEMPTS - 1 && isRetryable) {
+        await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)))
+        continue
+      }
+      break
+    }
   }
+  res.status(502).json({ error: String(lastError) })
 }
