@@ -1,6 +1,6 @@
 import type { MealRecord, MealType } from '../types'
 
-const SHEET_NAME = 'meals_v2'
+const SHEET_NAME = 'meals'
 const SPREADSHEET_ID = import.meta.env.VITE_SPREADSHEET_ID
 
 export function recordToRow(r: MealRecord): (string | number)[] {
@@ -27,7 +27,8 @@ export function rowToRecord(cells: string[]): MealRecord {
 }
 
 export async function appendMeal(token: string, record: MealRecord): Promise<void> {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A:K:append?valueInputOption=USER_ENTERED`
+  const range = encodeURIComponent(`'${SHEET_NAME}'!A:K`)
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED`
   const res = await fetch(url, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -37,7 +38,8 @@ export async function appendMeal(token: string, record: MealRecord): Promise<voi
 }
 
 export async function fetchMeals(token: string): Promise<MealRecord[]> {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A2:K`
+  const range = encodeURIComponent(`'${SHEET_NAME}'!A2:K`)
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}`
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
   if (!res.ok) throw new Error(`fetchMeals failed: ${res.status}`)
   const data = (await res.json()) as { values?: string[][] }
