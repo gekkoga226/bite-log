@@ -4,8 +4,9 @@ import { detectMealType } from '../lib/mealType'
 import { uploadImage } from '../services/drive'
 import { calculateNutrition } from '../services/calculate'
 import { appendMeal } from '../services/sheets'
+import { logNutritionToFit } from '../services/googleFit'
 import { compressImages } from '../lib/compressImage'
-import type { Nutrition } from '../types'
+import type { Nutrition, MealType } from '../types'
 
 interface Props {
   token: string
@@ -15,8 +16,11 @@ interface Props {
 
 interface ResultState {
   nutrition: Nutrition
-  total: Nutrition | null  // null when people === 1
+  total: Nutrition | null
   people: number
+  fitSynced: boolean
+  mealType: MealType
+  timestamp: string
 }
 
 function divideNutrition(n: Nutrition, people: number): Nutrition {
@@ -50,9 +54,10 @@ export function RecordScreen({ token, onDone, onCancel }: Props) {
 
       const total = await calculateNutrition({ memo: values.memo, note: values.note, images })
       const nutrition = values.people > 1 ? divideNutrition(total, values.people) : total
+      const timestamp = new Date().toISOString()
 
       await appendMeal(token, {
-        timestamp: new Date().toISOString(),
+        timestamp,
         date: values.date,
         mealType: values.mealType,
         photoUrl,
@@ -61,11 +66,14 @@ export function RecordScreen({ token, onDone, onCancel }: Props) {
         ...nutrition,
       })
 
-      setResult({
-        nutrition,
-        total: values.people > 1 ? total : null,
-        people: values.people,
-      })
+      // Google Fit 同期（失敗しても記録は成功扱い）
+      const fitSynced = await logNutritionToFit(token, {
+        timestamp,
+        mealType: values.mealType,
+        ...nutrition,
+      }).then(() => true).catch(() => false)
+
+      setResult({ nutrition, total: values.people > 1 ? total : null, people: values.people, fitSynced, mealType: values.mealType, timestamp })
     } catch (e) {
       setError(`エラー: ${e instanceof Error ? e.message : String(e)}`)
     } finally {
@@ -74,7 +82,7 @@ export function RecordScreen({ token, onDone, onCancel }: Props) {
   }
 
   if (result) {
-    const { nutrition, total, people } = result
+    const { nutrition, total, people, fitSynced } = result
     return (
       <div className="p-4 flex flex-col gap-4">
         <div className="rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(135deg,#007AFF,#5856D6)' }}>
@@ -96,6 +104,17 @@ export function RecordScreen({ token, onDone, onCancel }: Props) {
           </div>
           {nutrition.comment && <div className="text-xs opacity-90 mt-3">{nutrition.comment}</div>}
         </div>
+
+        {/* Google Fit 同期ステータス */}
+        <div className={`flex items-center gap-2 text-sm rounded-xl px-4 py-3 ${fitSynced ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-400'}`}>
+          <span>{fitSynced ? '✓' : '○'}</span>
+          <span>
+            {fitSynced
+              ? 'Google Fit に同期しました'
+              : 'Google Fit 未同期（再ログインで有効になります）'}
+          </span>
+        </div>
+
         <button onClick={onDone} className="bg-brand text-white rounded-xl py-3 font-semibold">完了</button>
       </div>
     )
