@@ -62,7 +62,17 @@ export interface FitNutritionInput {
   carbs: number
 }
 
+async function verifyFitnessScope(token: string): Promise<void> {
+  const res = await fetch(`https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${token}`)
+  const data = await res.json() as { scope?: string; error?: string; error_description?: string }
+  if (data.error) throw new Error(`Token invalid: ${data.error} - ${data.error_description ?? ''}`)
+  if (!data.scope?.includes('fitness.nutrition')) {
+    throw new Error(`fitness scope not in token. Scopes: ${data.scope ?? 'none'}`)
+  }
+}
+
 export async function logNutritionToFit(token: string, input: FitNutritionInput): Promise<void> {
+  await verifyFitnessScope(token)
   const dataSourceId = await getDataSourceId(token)
 
   // BigInt でナノ秒計算（Dateミリ秒 × 1,000,000）
