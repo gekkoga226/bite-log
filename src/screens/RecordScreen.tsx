@@ -4,7 +4,6 @@ import { detectMealType } from '../lib/mealType'
 import { uploadImage } from '../services/drive'
 import { calculateNutrition } from '../services/calculate'
 import { appendMeal } from '../services/sheets'
-import { logNutritionToFit } from '../services/googleFit'
 import { compressImages } from '../lib/compressImage'
 import type { Nutrition, MealType } from '../types'
 
@@ -18,8 +17,6 @@ interface ResultState {
   nutrition: Nutrition
   total: Nutrition | null
   people: number
-  fitSynced: boolean
-  fitError: string
   mealType: MealType
   timestamp: string
 }
@@ -67,17 +64,7 @@ export function RecordScreen({ token, onDone, onCancel }: Props) {
         ...nutrition,
       })
 
-      // Google Fit 同期（失敗しても記録は成功扱い）
-      let fitSynced = false
-      let fitError = ''
-      try {
-        await logNutritionToFit(token, { timestamp, mealType: values.mealType, ...nutrition })
-        fitSynced = true
-      } catch (e) {
-        fitError = e instanceof Error ? e.message : String(e)
-      }
-
-      setResult({ nutrition, total: values.people > 1 ? total : null, people: values.people, fitSynced, fitError, mealType: values.mealType, timestamp })
+      setResult({ nutrition, total: values.people > 1 ? total : null, people: values.people, mealType: values.mealType, timestamp })
     } catch (e) {
       setError(`エラー: ${e instanceof Error ? e.message : String(e)}`)
     } finally {
@@ -86,7 +73,7 @@ export function RecordScreen({ token, onDone, onCancel }: Props) {
   }
 
   if (result) {
-    const { nutrition, total, people, fitSynced, fitError } = result
+    const { nutrition, total, people } = result
     return (
       <div className="p-4 flex flex-col gap-4">
         <div className="rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(135deg,#007AFF,#5856D6)' }}>
@@ -107,19 +94,6 @@ export function RecordScreen({ token, onDone, onCancel }: Props) {
             <span className="flex-1 bg-white/20 rounded p-1.5 text-center">C {nutrition.carbs}g</span>
           </div>
           {nutrition.comment && <div className="text-xs opacity-90 mt-3">{nutrition.comment}</div>}
-        </div>
-
-        {/* Google Fit 同期ステータス */}
-        <div className={`flex flex-col gap-1 text-sm rounded-xl px-4 py-3 ${fitSynced ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
-          <div className="flex items-center gap-2">
-            <span>{fitSynced ? '✓' : '✗'}</span>
-            <span className="font-medium">
-              {fitSynced ? 'Google Fit に同期しました' : 'Google Fit 同期失敗'}
-            </span>
-          </div>
-          {!fitSynced && fitError && (
-            <div className="text-xs font-mono break-all opacity-80 pl-5">{fitError}</div>
-          )}
         </div>
 
         <button onClick={onDone} className="bg-brand text-white rounded-xl py-3 font-semibold">完了</button>

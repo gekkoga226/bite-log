@@ -4,7 +4,6 @@ const SCOPES = [
   'https://www.googleapis.com/auth/spreadsheets',
   'https://www.googleapis.com/auth/drive.file',
   'https://www.googleapis.com/auth/userinfo.email',
-  'https://www.googleapis.com/auth/fitness.nutrition.write',
 ].join(' ')
 
 export interface AuthState {
@@ -42,7 +41,7 @@ export function useAuth() {
         setState({ accessToken: token, email: user.email })
       },
     })
-    client.requestAccessToken({ prompt: 'consent' })
+    client.requestAccessToken()
   }, [])
 
   const signOut = useCallback(() => {
