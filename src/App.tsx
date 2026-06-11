@@ -4,6 +4,7 @@ import { AuthGuard } from './auth/AuthGuard'
 import { BottomNav, type Tab } from './components/BottomNav'
 import { TodayScreen } from './screens/TodayScreen'
 import { RecordScreen } from './screens/RecordScreen'
+import { MonthlyScreen } from './screens/MonthlyScreen'
 
 export default function App() {
   const auth = useAuth()
@@ -23,7 +24,7 @@ export default function App() {
         ) : (
           <>
             {tab === 'today' && <TodayScreen token={auth.accessToken!} reloadKey={reloadKey} />}
-            {tab === 'weekly' && <Placeholder label="週間（Phase 2で実装）" />}
+            {tab === 'weekly' && <MonthlyScreen token={auth.accessToken!} />}
             {tab === 'progress' && <Placeholder label="進捗（Phase 2/3で実装）" />}
             {tab === 'settings' && <Placeholder label="設定（Phase 3で実装）" />}
             <BottomNav active={tab} onChange={setTab} onRecord={() => setRecording(true)} />

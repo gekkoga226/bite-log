@@ -8,7 +8,7 @@ interface Props {
 
 const ITEMS: { key: Tab; icon: string; label: string }[] = [
   { key: 'today', icon: '🏠', label: '今日' },
-  { key: 'weekly', icon: '📊', label: '週間' },
+  { key: 'weekly', icon: '📊', label: '月間' },
   { key: 'progress', icon: '🎯', label: '進捗' },
   { key: 'settings', icon: '⚙️', label: '設定' },
 ]
