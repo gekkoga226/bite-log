@@ -1,18 +1,8 @@
 import type { MealRecord, MealType } from '../types'
+import { mealLabel } from '../lib/mealLabel'
 
 const ICONS: Record<MealType, string> = { 朝食: '🌅', 昼食: '☀️', 夕食: '🌙', 間食: '🍪' }
 const ORDER: MealType[] = ['朝食', '昼食', '夕食', '間食']
-
-function mealLabel(meal: MealRecord): string {
-  if (meal.memo) return meal.memo
-  if (meal.note) return meal.note
-  if (meal.comment) {
-    // comment format: "食材A, 食材B : 評価..." → 食材リスト部分だけ表示
-    const foodPart = meal.comment.split(':')[0].trim()
-    if (foodPart) return foodPart
-  }
-  return '（メモなし）'
-}
 
 interface Props {
   meals: MealRecord[]
