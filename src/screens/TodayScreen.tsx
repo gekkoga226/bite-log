@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { fetchMeals, deleteMeal } from '../services/sheets'
 import { aggregateDay } from '../lib/aggregate'
 import { toDateString } from '../lib/date'
-import { DEFAULT_GOALS } from '../lib/goals'
+import type { Goals } from '../lib/goals'
 import { CalorieCard } from '../components/CalorieCard'
 import { PfcBars } from '../components/PfcBars'
 import { MealList } from '../components/MealList'
@@ -15,7 +15,7 @@ function greeting(d: Date): string {
   return 'こんばんは 👋'
 }
 
-export function TodayScreen({ token, reloadKey }: { token: string; reloadKey: number }) {
+export function TodayScreen({ token, reloadKey, goals }: { token: string; reloadKey: number; goals: Goals }) {
   const [meals, setMeals] = useState<MealRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [localReload, setLocalReload] = useState(0)
@@ -52,11 +52,11 @@ export function TodayScreen({ token, reloadKey }: { token: string; reloadKey: nu
         <div className="text-gray-400 text-sm py-8 text-center">読み込み中…</div>
       ) : (
         <>
-          <CalorieCard consumed={totals.calories} target={DEFAULT_GOALS.calories} />
+          <CalorieCard consumed={totals.calories} target={goals.calories} />
           <PfcBars
-            protein={{ value: totals.protein, target: DEFAULT_GOALS.protein }}
-            fat={{ value: totals.fat, target: DEFAULT_GOALS.fat }}
-            carbs={{ value: totals.carbs, target: DEFAULT_GOALS.carbs }}
+            protein={{ value: totals.protein, target: goals.protein }}
+            fat={{ value: totals.fat, target: goals.fat }}
+            carbs={{ value: totals.carbs, target: goals.carbs }}
           />
           <MealList meals={meals} onDelete={handleDelete} />
         </>
