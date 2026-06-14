@@ -6,6 +6,7 @@ import { BottomNav, type Tab } from './components/BottomNav'
 import { TodayScreen } from './screens/TodayScreen'
 import { RecordScreen } from './screens/RecordScreen'
 import { MonthlyScreen } from './screens/MonthlyScreen'
+import { ProgressScreen } from './screens/ProgressScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 
 export default function App() {
@@ -28,7 +29,7 @@ export default function App() {
           <>
             {tab === 'today' && <TodayScreen token={auth.accessToken!} reloadKey={reloadKey} goals={goals} />}
             {tab === 'weekly' && <MonthlyScreen token={auth.accessToken!} goals={goals} />}
-            {tab === 'progress' && <Placeholder label="進捗（Phase 2/3で実装）" />}
+            {tab === 'progress' && <ProgressScreen token={auth.accessToken!} goals={goals} />}
             {tab === 'settings' && (
               <SettingsScreen token={auth.accessToken!} goals={goals} onSaved={setGoals} />
             )}
@@ -38,8 +39,4 @@ export default function App() {
       </div>
     </AuthGuard>
   )
-}
-
-function Placeholder({ label }: { label: string }) {
-  return <div className="p-8 text-center text-gray-400 text-sm pb-24">{label}</div>
 }
