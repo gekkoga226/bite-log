@@ -21,7 +21,7 @@ function nextMonth(year: number, month: number) {
   return month === 11 ? { year: year + 1, month: 0 } : { year, month: month + 1 }
 }
 
-export function MonthlyScreen({ token, goals }: { token: string; goals: Goals }) {
+export function MonthlyScreen({ token, goals, onOpenDay }: { token: string; goals: Goals; onOpenDay: (date: string) => void }) {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
@@ -174,6 +174,12 @@ export function MonthlyScreen({ token, goals }: { token: string; goals: Goals })
               ) : (
                 <DayPfcChart meals={selectedMeals} goals={goals} />
               )}
+              <button
+                onClick={() => onOpenDay(selected)}
+                className="w-full mt-3 bg-gray-100 text-gray-700 rounded-xl py-2.5 text-sm font-semibold active:bg-gray-200"
+              >
+                詳細を確認・修正 →
+              </button>
             </div>
           )}
         </>

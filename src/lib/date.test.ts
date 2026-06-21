@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { toDateString, isSameDay } from './date'
+import { toDateString, isSameDay, addDays } from './date'
 
 describe('toDateString', () => {
   it('formats a Date as YYYY-MM-DD in local time', () => {
@@ -18,5 +18,17 @@ describe('isSameDay', () => {
   })
   it('returns false for different day', () => {
     expect(isSameDay('2026-06-04', new Date(2026, 5, 5, 0, 1))).toBe(false)
+  })
+})
+
+describe('addDays', () => {
+  it('adds positive days', () => {
+    expect(addDays('2026-06-14', 1)).toBe('2026-06-15')
+  })
+  it('subtracts with negative days', () => {
+    expect(addDays('2026-06-01', -1)).toBe('2026-05-31')
+  })
+  it('crosses year boundary', () => {
+    expect(addDays('2025-12-31', 1)).toBe('2026-01-01')
   })
 })

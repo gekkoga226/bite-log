@@ -8,3 +8,9 @@ export function toDateString(d: Date): string {
 export function isSameDay(dateString: string, d: Date): boolean {
   return toDateString(d) === dateString
 }
+
+/** YYYY-MM-DD に n 日を加算した日付文字列を返す（n は負も可） */
+export function addDays(dateString: string, n: number): string {
+  const [y, m, d] = dateString.split('-').map(Number)
+  return toDateString(new Date(y, m - 1, d + n))
+}

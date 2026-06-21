@@ -7,12 +7,13 @@ const ORDER: MealType[] = ['朝食', '昼食', '夕食', '間食']
 interface Props {
   meals: MealRecord[]
   onDelete?: (meal: MealRecord) => void
+  title?: string
 }
 
-export function MealList({ meals, onDelete }: Props) {
+export function MealList({ meals, onDelete, title = '本日の食事記録' }: Props) {
   return (
     <div>
-      <div className="text-sm font-semibold mb-2.5 text-gray-700">本日の食事記録</div>
+      <div className="text-sm font-semibold mb-2.5 text-gray-700">{title}</div>
       {ORDER.map((type) => {
         const items = meals.filter((m) => m.mealType === type)
         const total = items.reduce((s, m) => s + m.calories, 0)
