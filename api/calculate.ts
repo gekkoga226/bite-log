@@ -1,8 +1,14 @@
 import { GoogleGenerativeAI, SchemaType, type ModelParams } from '@google/generative-ai'
 
 const PROMPT = `あなたは管理栄養士です。提供された食事の写真・メモ・備考から、1食分の栄養を推定してください。
-写真が複数枚ある場合は、それらすべてを合わせて1食分として合算してください。
-備考に店名・メニュー名がある場合は、その公式の栄養成分値を最優先で使用してください。
+写真が複数枚ある場合は、それらすべてを合わせて1食分として扱ってください。
+
+次の手順で推定し、itemsに料理・食材ごとに1行ずつ出力してください（合計はシステム側で計算するので不要です）。
+1. 写っている料理・食材をすべて洗い出す（ご飯・汁物・ソース・ドレッシング・調理油・飲み物も忘れない）
+2. 食器の大きさや一緒に写っている物と比べて、それぞれの量をグラムで見積もる（amountには「茶碗1杯」など目安も書く）
+3. 日本食品標準成分表の値をもとに、その量でのカロリー・タンパク質・脂質・炭水化物を計算する。揚げ物・炒め物は吸油分も含める
+備考に店名・メニュー名がある場合は、その公式の栄養成分値を最優先で使用してください（その場合はメニュー単位で1行にしてよい）。
+
 commentは「食材を列挙し、栄養バランスの評価と改善提案を述べる」形式で、日本語100字以内にしてください。
 例: 「白米, 鮭のホイル焼き, 納豆, 味噌汁 : タンパク質源が豊富で栄養バランスが良いです。副菜に緑黄色野菜や海藻類を追加しましょう。」`
 
@@ -44,14 +50,29 @@ export default async function handler(req: any, res: any): Promise<void> {
       responseSchema: {
         type: SchemaType.OBJECT,
         properties: {
-          calories: { type: SchemaType.NUMBER },
-          protein: { type: SchemaType.NUMBER },
-          fat: { type: SchemaType.NUMBER },
-          carbs: { type: SchemaType.NUMBER },
+          items: {
+            type: SchemaType.ARRAY,
+            items: {
+              type: SchemaType.OBJECT,
+              properties: {
+                name: { type: SchemaType.STRING },
+                amount: { type: SchemaType.STRING },
+                grams: { type: SchemaType.NUMBER },
+                calories: { type: SchemaType.NUMBER },
+                protein: { type: SchemaType.NUMBER },
+                fat: { type: SchemaType.NUMBER },
+                carbs: { type: SchemaType.NUMBER },
+              },
+              required: ['name', 'amount', 'grams', 'calories', 'protein', 'fat', 'carbs'],
+              // 量を見積もってから栄養素を出させるため、生成順を固定する
+              propertyOrdering: ['name', 'amount', 'grams', 'calories', 'protein', 'fat', 'carbs'],
+            },
+          },
           comment: { type: SchemaType.STRING },
         },
-        required: ['calories', 'protein', 'fat', 'carbs', 'comment'],
-      },
+        required: ['items', 'comment'],
+        propertyOrdering: ['items', 'comment'],
+      } as any,
     },
   }
 
@@ -72,7 +93,7 @@ export default async function handler(req: any, res: any): Promise<void> {
     for (let attempt = 0; attempt < ATTEMPTS_PER_MODEL; attempt++) {
       try {
         const result = await model.generateContent(parts)
-        res.status(200).json({ raw: result.response.text() })
+        res.status(200).json({ raw: JSON.stringify(sumItems(JSON.parse(result.response.text()))) })
         return
       } catch (e) {
         lastError = e
@@ -96,4 +117,29 @@ function isOverloaded(e: unknown): boolean {
     msg.includes('high demand') || msg.includes('overloaded') ||
     msg.includes('[500') || msg.includes('Internal Server Error')
   )
+}
+
+interface FoodItem {
+  name: string
+  amount: string
+  grams: number
+  calories: number
+  protein: number
+  fat: number
+  carbs: number
+}
+
+// 品目ごとの推定値を合計する（合計をAIに計算させると足し算を間違えることがあるため）
+function sumItems(obj: { items?: FoodItem[]; comment?: string }) {
+  const items = obj.items ?? []
+  const total = (key: 'calories' | 'protein' | 'fat' | 'carbs') =>
+    items.reduce((acc, item) => acc + (Number(item[key]) || 0), 0)
+  return {
+    calories: total('calories'),
+    protein: total('protein'),
+    fat: total('fat'),
+    carbs: total('carbs'),
+    comment: obj.comment ?? '',
+    items,
+  }
 }
