@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenerativeAI, type ModelParams } from '@google/generative-ai'
 
 interface DaySummary {
   date: string
@@ -90,33 +90,46 @@ export default async function handler(req: any, res: any): Promise<void> {
   }
 
   const genAI = new GoogleGenerativeAI(apiKey)
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-2.5-flash',
+  const generationConfig: Omit<ModelParams, 'model'> = {
     generationConfig: { temperature: 0.4 },
-  })
+  }
 
   const parts = [
     { text: SYSTEM },
     { text: buildContext(days, goals, body.latest ?? null, body.previous ?? null) },
   ]
 
-  const MAX_ATTEMPTS = 3
+  // 混雑(503等)時は同じモデルで再試行し、それでもダメなら別モデルにフォールバック
+  const MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite']
+  const ATTEMPTS_PER_MODEL = 2
   let lastError: unknown
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    try {
-      const result = await model.generateContent(parts)
-      res.status(200).json({ advice: result.response.text() })
-      return
-    } catch (e) {
-      lastError = e
-      const msg = String(e)
-      const isRetryable = msg.includes('503') || msg.includes('Service Unavailable') || msg.includes('high demand') || msg.includes('overloaded')
-      if (attempt < MAX_ATTEMPTS - 1 && isRetryable) {
-        await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)))
-        continue
+  for (const modelName of MODELS) {
+    const model = genAI.getGenerativeModel({ model: modelName, ...generationConfig })
+    for (let attempt = 0; attempt < ATTEMPTS_PER_MODEL; attempt++) {
+      try {
+        const result = await model.generateContent(parts)
+        res.status(200).json({ advice: result.response.text() })
+        return
+      } catch (e) {
+        lastError = e
+        if (!isOverloaded(e)) {
+          res.status(502).json({ error: String(e) })
+          return
+        }
+        if (attempt < ATTEMPTS_PER_MODEL - 1) await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)))
       }
-      break
     }
   }
-  res.status(502).json({ error: String(lastError) })
+  res.status(503).json({
+    error: `AIサーバーが混雑しています。少し時間をおいて再度お試しください。(${String(lastError)})`,
+  })
+}
+
+function isOverloaded(e: unknown): boolean {
+  const msg = String(e)
+  return (
+    msg.includes('503') || msg.includes('Service Unavailable') ||
+    msg.includes('high demand') || msg.includes('overloaded') ||
+    msg.includes('[500') || msg.includes('Internal Server Error')
+  )
 }
