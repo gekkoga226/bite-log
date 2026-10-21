@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
-import { fetchInbody, appendInbody } from '../services/inbody'
+import { fetchInbody, appendInbody, planInbodyImport, writeInbodyRows, writeInbodyFull, type InbodyImportPlan } from '../services/inbody'
+import { parseInbodyCsv, csvRowToRecord, type InBodyCsv } from '../lib/parseInbodyCsv'
 import { extractInbody } from '../services/inbodyOcr'
 import { fetchMeals } from '../services/sheets'
 import { fetchAdvice, summarizeDays } from '../services/advice'
@@ -33,6 +34,7 @@ export function ProgressScreen({ token, goals }: { token: string; goals: Goals }
   const [loading, setLoading] = useState(true)
   const [metric, setMetric] = useState<keyof InBodyMetrics>('weight')
   const [recording, setRecording] = useState(false)
+  const [importing, setImporting] = useState(false)
 
   function reload() {
     setLoading(true)
@@ -58,13 +60,29 @@ export function ProgressScreen({ token, goals }: { token: string; goals: Goals }
     <div className="p-4 pb-24">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold">進捗</h2>
-        <button
-          onClick={() => setRecording(true)}
-          className="text-sm text-brand font-semibold active:opacity-60"
-        >
-          ＋ InBodyを記録
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => { setImporting(true); setRecording(false) }}
+            className="text-sm text-gray-500 font-medium active:opacity-60"
+          >
+            CSV取込
+          </button>
+          <button
+            onClick={() => { setRecording(true); setImporting(false) }}
+            className="text-sm text-brand font-semibold active:opacity-60"
+          >
+            ＋ InBodyを記録
+          </button>
+        </div>
       </div>
+
+      {importing && (
+        <ImportInbodyCsvPanel
+          token={token}
+          onClose={() => setImporting(false)}
+          onSaved={() => { setImporting(false); reload() }}
+        />
+      )}
 
       {recording && (
         <RecordInbodyPanel
@@ -91,7 +109,7 @@ export function ProgressScreen({ token, goals }: { token: string; goals: Goals }
               </div>
               <div className="flex gap-2 mt-3 text-xs font-semibold">
                 <span className="flex-1 bg-white/20 rounded p-1.5 text-center">体脂肪 {fmt(latest.bodyFatPercent, 1)}%</span>
-                <span className="flex-1 bg-white/20 rounded p-1.5 text-center">筋肉 {fmt(latest.muscleMass, 1)}kg</span>
+                <span className="flex-1 bg-white/20 rounded p-1.5 text-center">骨格筋 {fmt(latest.muscleMass, 1)}kg</span>
                 <span className="flex-1 bg-white/20 rounded p-1.5 text-center">BMI {fmt(latest.bmi, 1)}</span>
               </div>
             </div>
@@ -314,6 +332,101 @@ function RecordInbodyPanel({ token, onClose, onSaved }: { token: string; onClose
               className="flex-1 bg-brand text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50"
             >
               {saving ? '保存中…' : '保存する'}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function ImportInbodyCsvPanel({ token, onClose, onSaved }: { token: string; onClose: () => void; onSaved: () => void }) {
+  const [csv, setCsv] = useState<InBodyCsv | null>(null)
+  const [plan, setPlan] = useState<InbodyImportPlan | null>(null)
+  const [existingCount, setExistingCount] = useState(0)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  async function pick(file: File) {
+    setError(null)
+    setBusy(true)
+    try {
+      const parsed = parseInbodyCsv(await file.text())
+      if (parsed.rows.length === 0) throw new Error('測定データの行がありません')
+      const existing = await fetchInbody(token)
+      setCsv(parsed)
+      setExistingCount(existing.length)
+      setPlan(planInbodyImport(existing, parsed.rows.map(csvRowToRecord)))
+    } catch (e) {
+      setError(`読み込みエラー: ${e instanceof Error ? e.message : String(e)}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function apply() {
+    if (!csv || !plan) return
+    setBusy(true)
+    setError(null)
+    try {
+      await writeInbodyRows(token, plan.rows, existingCount)
+      await writeInbodyFull(token, csv.header, csv.rows.map((r) => r.values))
+      onSaved()
+    } catch (e) {
+      setError(`保存エラー: ${e instanceof Error ? e.message : String(e)}`)
+      setBusy(false)
+    }
+  }
+
+  const first = csv?.rows[0]?.date
+  const last = csv?.rows[csv.rows.length - 1]?.date
+
+  return (
+    <div className="bg-white border border-brand/30 rounded-2xl p-4 mb-4 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-semibold">InBodyのCSVを取り込む</span>
+        <button onClick={onClose} className="text-gray-400 text-sm active:text-gray-700" aria-label="閉じる">✕</button>
+      </div>
+
+      {error && <div className="bg-red-50 text-red-600 text-xs rounded-lg p-2.5 mb-3">{error}</div>}
+
+      {!plan ? (
+        <>
+          <p className="text-xs text-gray-500 mb-2">InBodyアプリの「データのエクスポート」で保存したCSVを選んでください。測定日時と骨格筋量はCSVの値で記録し直します。</p>
+          <label className="block bg-gray-100 text-gray-700 rounded-xl py-2.5 text-sm font-medium text-center cursor-pointer active:bg-gray-200">
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".csv,text/csv"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) pick(f); if (inputRef.current) inputRef.current.value = '' }}
+              className="hidden"
+            />
+            {busy ? '読み込み中…' : 'CSVを選択'}
+          </label>
+        </>
+      ) : (
+        <>
+          <p className="text-xs text-gray-600 mb-2">{first} 〜 {last} の {csv!.rows.length}件の測定が見つかりました。</p>
+          <div className="grid grid-cols-3 gap-2 mb-3 text-center">
+            <div className="bg-gray-50 rounded-lg p-2"><div className="text-lg font-bold tabular-nums">{plan.added.length}</div><div className="text-[10px] text-gray-500">新しく追加</div></div>
+            <div className="bg-gray-50 rounded-lg p-2"><div className="text-lg font-bold tabular-nums">{plan.replaced.length}</div><div className="text-[10px] text-gray-500">CSVの値で更新</div></div>
+            <div className="bg-gray-50 rounded-lg p-2"><div className="text-lg font-bold tabular-nums">{plan.kept.length}</div><div className="text-[10px] text-gray-500">そのまま残す</div></div>
+          </div>
+          {plan.replaced.some((r) => r.before.date !== r.after.date) && (
+            <div className="text-[11px] text-gray-500 mb-3">
+              測定日の修正：{plan.replaced.filter((r) => r.before.date !== r.after.date).map((r) => `${r.before.date.slice(5)}→${r.after.date.slice(5)}`).join('、')}
+            </div>
+          )}
+          <p className="text-[11px] text-gray-400 mb-3">全項目（部位別の筋肉量など）は「inbody_full」シートにも保存します。</p>
+          <div className="flex gap-2">
+            <button onClick={() => { setPlan(null); setCsv(null) }} className="flex-1 bg-gray-100 text-gray-600 rounded-xl py-2.5 text-sm font-medium active:bg-gray-200">戻る</button>
+            <button
+              onClick={apply}
+              disabled={busy}
+              className="flex-1 bg-brand text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50"
+            >
+              {busy ? '取り込み中…' : `${plan.rows.length}件で保存する`}
             </button>
           </div>
         </>

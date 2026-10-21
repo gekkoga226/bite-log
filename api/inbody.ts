@@ -4,7 +4,7 @@ const PROMPT = `あなたはInBodyなどの体組成計の結果用紙を読み�
 提供された写真から以下の数値を読み取り、JSONで返してください。
 - weight: 体重（kg）
 - bodyFatPercent: 体脂肪率（%）
-- muscleMass: 骨格筋量（kg）。「骨格筋量」が無ければ「筋肉量」を使う
+- muscleMass: 骨格筋量（kg）。InBodyの結果用紙では右下「研究項目」欄の「骨格筋量」（体重の4〜5割程度の値）。体成分分析表の「筋肉量」（体重の7〜8割の値）とは別の項目なので使わない
 - bmi: BMI
 - basalMetabolism: 基礎代謝量（kcal）
 - bodyFatMass: 体脂肪量（kg）
