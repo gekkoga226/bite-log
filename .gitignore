@@ -31,3 +31,9 @@ dist-ssr
 .superpowers/
 
 .vercel
+
+# Python caches (report skill scripts)
+__pycache__/
+
+# Generated reports and personal health data
+output/

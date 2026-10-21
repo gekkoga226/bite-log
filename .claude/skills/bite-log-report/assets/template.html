@@ -1,0 +1,832 @@
+<title>{{ c.title or "Bite-Log コーチングカルテ" }}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Oswald:wght@500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#eceFea; --surface:#fbfcfa; --surface2:#f3f5f1;
+  --ink:#14201a; --ink2:#46554d; --muted:#76837c;
+  --line:#dce2db; --axis:#bcc6be;
+  --accent:#c8372d; --accent-soft:#f7e0dc;
+  --p:#2a78d6; --f:#eb6834; --c:#1baf7a; --banana:#eda100; --banana-off:#dfe4dd;
+  --good:#0ca30c; --good-ink:#006300; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b;
+  --s1:#cde2fb; --s2:#86b6ef; --s3:#2a78d6; --s4:#184f95;
+  --band:rgba(42,120,214,.09);
+  --shadow:0 1px 2px rgba(20,32,26,.06),0 6px 24px rgba(20,32,26,.05);
+  --display:"Dela Gothic One","Hiragino Kaku Gothic StdN","Yu Gothic",sans-serif;
+  --body:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",system-ui,sans-serif;
+  --num:"Oswald","Bahnschrift","Arial Narrow",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#0d1310; --surface:#151e19; --surface2:#1b2620;
+    --ink:#eef3ef; --ink2:#bac8bf; --muted:#86948c;
+    --line:#26322b; --axis:#3a4840;
+    --accent:#f0604f; --accent-soft:#3b211d;
+    --p:#3987e5; --f:#d95926; --c:#199e70; --banana:#c98500; --banana-off:#2a3630;
+    --good-ink:#2fc22f;
+    --s1:#1d3d66; --s2:#256abf; --s3:#5598e7; --s4:#b7d3f6;
+    --band:rgba(57,135,229,.14);
+    --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#0d1310; --surface:#151e19; --surface2:#1b2620;
+  --ink:#eef3ef; --ink2:#bac8bf; --muted:#86948c;
+  --line:#26322b; --axis:#3a4840;
+  --accent:#f0604f; --accent-soft:#3b211d;
+  --p:#3987e5; --f:#d95926; --c:#199e70; --banana:#c98500; --banana-off:#2a3630;
+  --good-ink:#2fc22f;
+  --s1:#1d3d66; --s2:#256abf; --s3:#5598e7; --s4:#b7d3f6;
+  --band:rgba(57,135,229,.14);
+  --shadow:none;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:20px;padding-block:28px 72px;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-weight:400;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-size:clamp(22px,3.2vw,30px);line-height:1.35;letter-spacing:.01em}
+h3{font-family:var(--body);font-weight:700;font-size:17px;line-height:1.5}
+p{margin:0}
+.eyebrow{font-family:var(--num);font-weight:500;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
+.lead{color:var(--ink2);max-width:64ch}
+.num{font-family:var(--num);font-weight:600;letter-spacing:.01em}
+.tab{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+small,.small{font-size:13px}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.35fr 1fr;gap:28px;align-items:stretch}
+.hero-main{display:flex;flex-direction:column;gap:18px;padding-block:8px}
+.hero h1{font-family:var(--display);font-size:clamp(28px,4.2vw,44px);line-height:1.2;letter-spacing:.005em}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.meta{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 12px;font-size:13px;color:var(--ink2)}
+.chip b{font-family:var(--num);font-weight:600;color:var(--ink);font-size:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.grades{padding:20px;display:flex;flex-direction:column;gap:14px}
+.grades-top{display:flex;gap:16px;align-items:center}
+.plate{width:116px;height:116px;flex:none}
+.grades-top p{color:var(--ink2);font-size:14px;line-height:1.65}
+.grade-list{display:flex;flex-direction:column;gap:9px;list-style:none;margin:0;padding:0}
+.grade-row{display:grid;grid-template-columns:8.6em 1fr 2.2em;gap:10px;align-items:center;font-size:14px}
+.meter{height:8px;border-radius:4px;background:var(--surface2);overflow:hidden;border:1px solid var(--line)}
+.meter i{display:block;height:100%;border-radius:0 4px 4px 0}
+.gbadge{font-family:var(--num);font-weight:600;font-size:15px;text-align:center;border-radius:6px;line-height:1.6}
+.g-S,.g-A{background:color-mix(in srgb,var(--good) 18%,transparent);color:var(--good-ink)}
+.g-B{background:color-mix(in srgb,var(--p) 16%,transparent);color:var(--ink)}
+.g-C{background:color-mix(in srgb,var(--serious) 24%,transparent);color:var(--ink)}
+.g-D{background:color-mix(in srgb,var(--crit) 20%,transparent);color:var(--ink)}
+
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{padding:16px 18px;display:flex;flex-direction:column;gap:2px}
+.kpi .lab{font-size:13px;color:var(--ink2)}
+.kpi .val{font-family:var(--num);font-weight:600;font-size:34px;line-height:1.15}
+.kpi .val span{font-size:15px;font-weight:500;color:var(--ink2);margin-left:3px}
+.kpi .sub{font-size:12.5px;color:var(--muted)}
+.delta-up{color:var(--good-ink);font-weight:700}
+.delta-warn{color:var(--accent);font-weight:700}
+
+/* section */
+section{display:flex;flex-direction:column;gap:16px}
+.sec-head{display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:1px solid var(--line)}
+.panel{padding:20px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.coach{display:flex;gap:14px;padding:16px 18px;background:var(--accent-soft);border-radius:12px;align-items:flex-start}
+.coach .who{flex:none;width:38px;height:38px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-family:var(--display);font-size:15px}
+.coach p{font-size:14.5px;line-height:1.8}
+.coach b{font-weight:700}
+.chart-title{font-weight:700;font-size:14.5px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.chart-title .muted{font-weight:400;font-size:12.5px}
+svg text{font-family:var(--body)}
+.scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--ink2);align-items:center}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+#daily{min-width:680px}
+@media (max-width:600px){ #daily{min-width:0}}
+.hit{cursor:pointer}
+.hit:focus{outline:2px solid var(--accent);outline-offset:1px}
+
+/* tooltip */
+#tip{position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--surface);padding:8px 11px;border-radius:8px;font-size:12.5px;line-height:1.55;max-width:260px;opacity:0;transition:opacity .12s}
+#tip.on{opacity:1}
+#tip b{font-family:var(--num);font-weight:600;font-size:13.5px}
+
+/* meals */
+.mealbars{display:flex;flex-direction:column;gap:12px}
+.mrow{display:grid;grid-template-columns:3.2em 1fr 4.6em;gap:10px;align-items:center;font-size:14px}
+.mtrack{position:relative;height:22px;background:var(--surface2);border-radius:0 4px 4px 0}
+.mtrack i{position:absolute;left:0;top:0;bottom:0;background:var(--p);border-radius:0 4px 4px 0}
+.mtrack .th{position:absolute;top:-5px;bottom:-5px;width:0;border-left:2px solid var(--ink)}
+.mrow .v{font-family:var(--num);font-weight:600;text-align:right}
+.banana-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(16px,1fr));gap:3px}
+.banana-grid i{aspect-ratio:1;border-radius:3px;background:var(--banana-off)}
+.banana-grid i.b{background:var(--banana)}
+.big{font-family:var(--num);font-weight:600;font-size:56px;line-height:1}
+
+/* calendar */
+.cal-wrap{display:flex;flex-direction:column;gap:10px}
+#detail{padding:16px 18px;display:flex;flex-direction:column;gap:8px;min-height:120px}
+#detail table{width:100%;border-collapse:collapse;font-size:13.5px}
+#detail td{padding:5px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+#detail td.n{text-align:right;font-family:var(--num);white-space:nowrap;font-variant-numeric:tabular-nums}
+#detail .ty{white-space:nowrap;color:var(--ink2);width:3.5em}
+
+/* fame */
+.fame{padding:18px;display:flex;flex-direction:column;gap:8px}
+.fame .tag{align-self:flex-start;font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;border:1px solid var(--line);color:var(--ink2)}
+.fame .big2{font-family:var(--num);font-weight:600;font-size:36px;line-height:1.1}
+.fame .big2 span{font-size:14px;color:var(--ink2);font-weight:500;margin-left:4px}
+.fame ul{margin:0;padding-left:1.1em;font-size:13.5px;color:var(--ink2)}
+.freq{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.freq .card{padding:14px 16px}
+.freq .n{font-family:var(--num);font-weight:600;font-size:30px;line-height:1.1}
+.freq .n span{font-size:13px;color:var(--ink2);margin-left:3px;font-weight:500}
+
+/* training */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.day{padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;gap:6px;min-height:190px}
+.day .dn{font-family:var(--num);font-weight:600;font-size:13px;letter-spacing:.12em;color:var(--muted)}
+.day .dt{font-family:var(--display);font-size:16px;line-height:1.3}
+.day ul{margin:0;padding:0;list-style:none;font-size:12.5px;line-height:1.55;display:flex;flex-direction:column;gap:3px}
+.day ul li{display:flex;justify-content:space-between;gap:6px;align-items:baseline}
+.day ul li span{font-family:var(--num);color:var(--ink2);white-space:nowrap}
+.day.up{border-top:4px solid var(--p)}
+.day.low{border-top:4px solid var(--c)}
+.day.rest{background:var(--surface2);border-top:4px solid var(--axis)}
+.day.sat{box-shadow:0 0 0 2px var(--accent) inset}
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.rule{padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.rule .k{font-family:var(--num);font-size:12px;letter-spacing:.14em;color:var(--accent);font-weight:500}
+
+/* targets table */
+.tgt{width:100%;border-collapse:collapse;font-size:14px}
+.tgt th,.tgt td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left}
+.tgt th{font-weight:500;color:var(--ink2);font-size:12.5px}
+.tgt td.n{font-family:var(--num);font-weight:600;font-size:16px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.arrow{color:var(--accent);font-weight:700}
+
+/* checklist */
+.check{padding:8px 18px}
+.check label{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line);cursor:pointer;font-size:14.5px}
+.check label:last-child{border-bottom:0}
+.check input{width:20px;height:20px;accent-color:var(--accent);margin-top:3px;flex:none}
+.check input:checked + span{color:var(--muted);text-decoration:line-through}
+.prog{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--ink2)}
+.prog .meter{flex:1;height:10px}
+.prog .meter i{background:var(--accent)}
+
+
+@page{margin:0}
+@media print{
+  html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .card,.coach,.day,.rule,.fame,.kpi,.grades,table,tr{break-inside:avoid}
+  .card{box-shadow:none}
+  #tip{display:none}
+  .print-only{display:inline!important}
+  .screen-only{display:none!important}
+}
+html.pdf .card{box-shadow:none}
+html.pdf .print-only{display:inline!important}
+html.pdf .screen-only{display:none!important}
+.print-only{display:none}
+
+.ibtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media (max-width:900px){.ibtiles{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:600px){
+  .tgt-main thead{display:none}
+  .tgt-main,.tgt-main tbody{display:block}
+  .tgt-main tr{display:grid;grid-template-columns:auto 1fr auto;column-gap:10px;row-gap:2px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--line)}
+  .tgt-main td{border:0;padding:0}
+  .tgt-main td:nth-child(1){grid-column:1/-1;font-weight:700}
+  .tgt-main td:nth-child(2){grid-column:1}
+  .tgt-main td:nth-child(3){grid-column:2;justify-self:center}
+  .tgt-main td:nth-child(4){grid-column:3}
+  .tgt-main td:nth-child(5){grid-column:1/-1;color:var(--ink2);font-size:13px}
+}
+html.pdf .tgt-main thead{display:none}
+html.pdf .tgt-main,html.pdf .tgt-main tbody{display:block}
+html.pdf .tgt-main tr{display:grid;grid-template-columns:auto 1fr auto;column-gap:10px;row-gap:2px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--line)}
+html.pdf .tgt-main td{border:0;padding:0}
+html.pdf .tgt-main td:nth-child(1){grid-column:1/-1;font-weight:700}
+html.pdf .tgt-main td:nth-child(2){grid-column:1}
+html.pdf .tgt-main td:nth-child(3){grid-column:2;justify-self:center}
+html.pdf .tgt-main td:nth-child(4){grid-column:3}
+html.pdf .tgt-main td:nth-child(5){grid-column:1/-1;color:var(--ink2);font-size:13px}
+html.pdf .wrap{padding-inline:10px;padding-block:14px 40px;gap:22px}
+html.pdf .panel{padding:14px 12px}
+html.pdf .kpi{padding:12px 14px}
+html.pdf .grades{padding:16px 14px}
+html.pdf .coach{padding:14px 14px;gap:10px}
+html.pdf .fame{padding:14px}
+html.pdf .rule{padding:14px}
+html.pdf .check{padding:6px 14px}
+html.pdf .freq .card{padding:12px 14px}
+html.pdf #detail{padding:14px 12px}
+html.pdf .scroll-x{overflow:visible}
+html.pdf #daily{min-width:0!important}
+html.pdf *{break-inside:auto!important;break-before:auto!important;break-after:auto!important}
+.notes{font-size:12.5px;color:var(--muted);line-height:1.7}
+.notes ul{margin:6px 0 0;padding-left:1.2em}
+
+@media (max-width:900px){
+  .hero{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .grid2,.grid3,.rules{grid-template-columns:1fr}
+  .freq{grid-template-columns:repeat(2,1fr)}
+  .week{grid-template-columns:repeat(2,1fr)}
+  .day{min-height:0}
+}
+@media (max-width:600px){
+  .wrap{padding-inline:10px;padding-block:14px 40px;gap:22px}
+  .panel{padding:14px 12px}
+  .kpi{padding:12px 14px}
+  .grades{padding:16px 14px}
+  .coach{padding:14px 14px;gap:10px}
+  .fame{padding:14px}
+  .rule{padding:14px}
+  .check{padding:6px 14px}
+  .freq .card{padding:12px 14px}
+  #detail{padding:14px 12px}
+}
+@media (max-width:420px){
+  .kpi .val{font-size:28px}
+  .week{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:no-preference){
+  .meter i{transition:width .6s ease}
+}
+</style>
+
+<div class="wrap">
+{%- set S = stats %}{% set D = chart %}
+{%- macro gcls(g) %}{{ 'g-A' if g in ['S','A'] else 'g-' ~ g }}{% endmacro %}
+{%- macro gcol(g) %}{{ {'S':'var(--good)','A':'var(--good)','B':'var(--p)','C':'var(--serious)','D':'var(--crit)'}.get(g,'var(--p)') }}{% endmacro %}
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-main">
+    <div class="eyebrow">{{ c.eyebrow or ('Bite-Log · Coaching Report · ' ~ S.period.start|replace('-','.') ~ ' — ' ~ S.period.end[5:]|replace('-','.')) }}</div>
+    <h1>{{ c.hero.h1 }}{% if c.hero.h1_accent %}<br><em>{{ c.hero.h1_accent }}</em>{% endif %}</h1>
+    <p class="lead">{{ c.hero.lead }}</p>
+    <div class="meta">
+      <span class="chip">分析日数 <b>{{ S.logging.full_days }}</b> 日</span>
+      <span class="chip">食事 <b>{{ S.logging.meals_on_full_days }}</b> 食</span>
+      {%- if S.inbody.count %}<span class="chip">InBody <b>{{ S.inbody.count }}</b> 回</span>{% endif %}
+      <span class="chip">現在の目標 <b>{{ '{:,.0f}'.format(S.goals.k) }}</b> kcal / P <b>{{ '%.0f'|format(S.goals.p) }}</b> g</span>
+    </div>
+  </div>
+  <div class="card grades" aria-label="{{ c.grades|length }}項目の評価">
+    <div class="grades-top">
+      <svg class="plate" viewBox="0 0 120 120" role="img" aria-label="総合評価 {{ c.overall.grade }}{{ c.overall.plus }}">
+        <circle cx="60" cy="60" r="57" fill="var(--ink)"/>
+        <circle cx="60" cy="60" r="49" fill="none" stroke="var(--accent)" stroke-width="3"/>
+        <circle cx="60" cy="60" r="38" fill="none" stroke="var(--surface)" stroke-opacity=".18" stroke-width="1"/>
+        <text x="60" y="29" text-anchor="middle" fill="var(--surface)" font-size="9" letter-spacing="2" style="font-family:var(--num)">OVERALL</text>
+        <text x="60" y="100" text-anchor="middle" fill="var(--surface)" font-size="9" letter-spacing="2" style="font-family:var(--num)">GRADE</text>
+        {%- if c.overall.plus %}
+        <text x="52" y="74" text-anchor="middle" fill="var(--surface)" font-size="38" style="font-family:var(--display)">{{ c.overall.grade }}</text>
+        <text x="80" y="66" text-anchor="middle" fill="var(--accent)" font-size="24" style="font-family:var(--display)">{{ c.overall.plus }}</text>
+        {%- else %}
+        <text x="60" y="74" text-anchor="middle" fill="var(--surface)" font-size="40" style="font-family:var(--display)">{{ c.overall.grade }}</text>
+        {%- endif %}
+      </svg>
+      <p>{{ c.overall.summary }}</p>
+    </div>
+    <ul class="grade-list">
+      {%- for g in c.grades %}
+      <li class="grade-row"><span>{{ g.name }}</span><span class="meter"><i style="width:{{ g.score }}%;background:{{ gcol(g.grade) }}"></i></span><span class="gbadge {{ gcls(g.grade) }}">{{ g.grade }}</span></li>
+      {%- endfor %}
+    </ul>
+  </div>
+</header>
+
+<!-- KPIs -->
+<div class="kpis">
+  {%- for k in c.kpis %}
+  <div class="card kpi"><div class="lab">{{ k.label }}</div><div class="val">{{ k.value }}<span>{{ k.unit }}</span></div><div class="sub">{{ k.sub }}</div></div>
+  {%- endfor %}
+</div>
+
+{%- if D.inbody|length %}
+<!-- BODY -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">Body composition</div>
+    <h2>{{ c.body.h2 }}</h2>
+    <p class="lead">{{ c.body.lead }}</p>
+  </div>
+  <div class="grid3" id="ib-charts"></div>
+  {%- if c.body.coach %}
+  <div class="coach"><div class="who">C</div><p>{{ c.body.coach }}</p></div>
+  {%- endif %}
+</section>
+{%- endif %}
+
+{%- if detail and c.inbody_detail %}
+<!-- INBODY DETAIL -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">InBody {{ detail.date|replace('-','.') }}</div>
+    <h2>{{ c.inbody_detail.h2 }}</h2>
+    <p class="lead">{{ c.inbody_detail.lead }}</p>
+  </div>
+  <div class="ibtiles">
+    {%- if detail.score is not none %}<div class="card kpi"><div class="lab">InBody点数</div><div class="val">{{ detail.score }}<span>/ 100</span></div><div class="sub">筋肉が増えると100点を超えることも</div></div>{% endif %}
+    {%- if detail.smm is not none %}<div class="card kpi"><div class="lab">骨格筋量</div><div class="val">{{ detail.smm }}<span>kg</span></div><div class="sub">{% if detail.smm_range %}標準 {{ detail.smm_range }} kg{% endif %}</div></div>{% endif %}
+    {%- if detail.visceral is not none %}<div class="card kpi"><div class="lab">内臓脂肪レベル</div><div class="val">{{ detail.visceral }}</div><div class="sub">{% if detail.visceral < 10 %}<span class="delta-up">10未満で標準</span>{% else %}<span class="delta-warn">10以上は要注意</span>{% endif %}</div></div>{% endif %}
+    {%- if detail.waist is not none %}<div class="card kpi"><div class="lab">腹囲</div><div class="val">{{ detail.waist }}<span>cm</span></div><div class="sub">{% if detail.bmr %}基礎代謝 {{ '{:,}'.format(detail.bmr) }} kcal{% endif %}{% if detail.smi %} · SMI {{ detail.smi }}{% endif %}</div></div>{% endif %}
+  </div>
+  <div class="grid2">
+    <div class="card panel" style="display:flex;flex-direction:column;gap:10px">
+      <div class="chart-title">部位別の筋肉量<span class="muted">黒線＝標準 100%</span></div>
+      <div id="seg-lean"></div>
+      <div class="chart-title" style="margin-top:6px">部位別の体脂肪量<span class="muted">黒線＝標準 100%</span></div>
+      <div id="seg-fat"></div>
+    </div>
+    {%- if detail.goal %}
+    <div class="card panel" style="display:flex;flex-direction:column;gap:12px">
+      <div class="chart-title">InBodyが示す理想の体<span class="muted">体重調節 {{ '%+.1f'|format(detail.goal.weight_change) }} kg</span></div>
+      <div id="goalbody"></div>
+      <p class="small" style="color:var(--ink2)">{{ c.inbody_detail.goal_text }}</p>
+    </div>
+    {%- endif %}
+  </div>
+</section>
+{%- endif %}
+
+<!-- PROTEIN -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">Protein → Muscle</div>
+    <h2>{{ c.protein.h2 }}</h2>
+    <p class="lead">{{ c.protein.lead }}</p>
+  </div>
+  <div class="grid2">
+    <div class="card panel" style="display:flex;flex-direction:column;gap:10px">
+      <div class="chart-title">月別 · たんぱく質（g/日）<span class="muted">線＝目標 {{ '%.0f'|format(S.goals.p) }} g{% if D.weight %} · 帯＝1.6〜2.0 g/kg{% endif %}</span></div>
+      <div id="protein-month"></div>
+    </div>
+    <div class="card panel" style="display:flex;flex-direction:column;gap:10px">
+      <div class="chart-title">月別 · カロリー（kcal/日）<span class="muted">線＝目標 {{ '{:,.0f}'.format(S.goals.k) }} kcal</span></div>
+      <div id="kcal-month"></div>
+    </div>
+  </div>
+  {%- if c.protein.coach %}
+  <div class="coach"><div class="who">C</div><p>{{ c.protein.coach }}</p></div>
+  {%- endif %}
+</section>
+
+<!-- DAILY -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">Daily fuel</div>
+    <h2>{{ c.daily.h2 }}</h2>
+    <p class="lead">{{ c.daily.lead }}<span class="screen-only">バーにカーソルを合わせると、その日の内訳が出ます。</span></p>
+  </div>
+  <div class="card panel" style="display:flex;flex-direction:column;gap:10px">
+    <div class="chart-title">1日の総摂取カロリー（3食そろった日のみ）<span class="muted">黒線＝目標 {{ '{:,.0f}'.format(S.goals.k) }} kcal · 帯＝±10%<span class="screen-only"> · クリックで下に詳細表示</span></span></div>
+    <div class="scroll-x"><div id="daily"></div></div>
+  </div>
+</section>
+
+<!-- PFC & MEALS -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">Balance &amp; timing</div>
+    <h2>{{ c.balance.h2 }}</h2>
+    <p class="lead">{{ c.balance.lead }}</p>
+  </div>
+  <div class="card panel" style="display:flex;flex-direction:column;gap:12px">
+    <div class="chart-title">PFCバランス（エネルギー比）</div>
+    <div id="pfc"></div>
+    <div class="legend"><span><i style="background:var(--p)"></i>たんぱく質 P</span><span><i style="background:var(--f)"></i>脂質 F</span><span><i style="background:var(--c)"></i>炭水化物 C</span></div>
+  </div>
+  <div class="grid2">
+    <div class="card panel" style="display:flex;flex-direction:column;gap:14px">
+      <div class="chart-title">食事ごとのたんぱく質（1日平均）<span class="muted">黒線＝1食 20 g の目安</span></div>
+      <div class="mealbars" id="mealp"></div>
+      <div class="chart-title" style="margin-top:6px">食事ごとのカロリー配分</div>
+      <div id="mealk"></div>
+      <div class="legend" id="mealk-legend"></div>
+    </div>
+    {%- if D.counter.count %}
+    <div class="card panel" style="display:flex;flex-direction:column;gap:12px">
+      <div class="chart-title">{{ c.balance.counter_title or (D.counter.item ~ '・カウンター') }}<span class="muted">朝食の記録 {{ D.counter.total }}件</span></div>
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span class="big">{{ D.counter.count }}</span><span>件が{{ D.counter.item }}（{{ (D.counter.count / D.counter.total * 100)|round|int }}%）</span></div>
+      <div class="banana-grid" id="banana" aria-label="朝食{{ D.counter.total }}件のうち{{ D.counter.item }}を含む{{ D.counter.count }}件"></div>
+      <div class="legend"><span><i style="background:var(--banana)"></i>{{ D.counter.item }}を含む朝食</span><span><i style="background:var(--banana-off)"></i>それ以外</span></div>
+      <p class="small" style="color:var(--ink2)">{{ c.balance.counter_note }}</p>
+    </div>
+    {%- endif %}
+  </div>
+</section>
+
+<!-- CALENDAR -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">Consistency</div>
+    <h2>{{ c.consistency.h2 }}</h2>
+    <p class="lead">{{ c.consistency.lead }}<span class="screen-only">マスを選ぶと、その日の食事が下に出ます。</span><span class="print-only">下は最後に3食そろった日（{{ D.days[-1].d[5:7]|int }}/{{ D.days[-1].d[8:10]|int }}）の食事の内訳です。</span></p>
+  </div>
+  <div class="card panel cal-wrap">
+    <div class="scroll-x"><div id="cal"></div></div>
+    <div class="legend" id="cal-legend"></div>
+  </div>
+  <div class="card" id="detail" aria-live="polite"></div>
+</section>
+
+<!-- WEEKDAY & FAME -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">Patterns</div>
+    <h2>{{ c.patterns.h2 }}</h2>
+    <p class="lead">{{ c.patterns.lead }}</p>
+  </div>
+  <div class="grid2">
+    <div class="card panel" style="display:flex;flex-direction:column;gap:10px">
+      <div class="chart-title">曜日別 · 平均カロリー<span class="muted">黒線＝目標 {{ '{:,.0f}'.format(S.goals.k) }} kcal · 括弧内は日数</span></div>
+      <div id="weekday"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      {%- for f in c.patterns.fame %}
+      <div class="card fame">
+        <span class="tag">{{ f.tag }}</span>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px"><b>{{ f.date }}</b><span class="big2">{{ f.value }}<span>{{ f.unit or 'kcal' }}</span></span></div>
+        <p class="small" style="color:var(--ink2)">{{ f.text }}</p>
+      </div>
+      {%- endfor %}
+    </div>
+  </div>
+  {%- if c.patterns.freq %}
+  <div class="freq">
+    {%- for f in c.patterns.freq %}
+    <div class="card"><div class="small muted">{{ f.label }}</div><div class="n">{{ f.n }}<span>{{ f.unit }}</span></div><div class="small" style="color:var(--ink2)">{{ f.note }}</div></div>
+    {%- endfor %}
+  </div>
+  {%- endif %}
+</section>
+
+<!-- TRAINING -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">Training</div>
+    <h2>{{ c.training.h2 }}</h2>
+    <p class="lead">{{ c.training.lead }}</p>
+  </div>
+  <div class="week">
+    {%- for d in c.training.week %}
+    <div class="day {{ d.kind }}{% if d.mark %} sat{% endif %}"><div class="dn">{{ d.dn }}</div><div class="dt">{{ d.title }}</div><ul>
+      {%- for it in d['items'] %}<li>{{ it[0] }}{% if it|length > 1 and it[1] %} <span>{{ it[1] }}</span>{% endif %}</li>{% endfor %}</ul></div>
+    {%- endfor %}
+  </div>
+  <div class="legend"><span><i style="background:var(--p)"></i>上半身の日</span><span><i style="background:var(--c)"></i>下半身の日</span><span><i style="background:var(--axis)"></i>休養</span>{% if c.training.mark_legend %}<span><i style="background:transparent;box-shadow:0 0 0 2px var(--accent) inset"></i>{{ c.training.mark_legend }}</span>{% endif %}</div>
+  <div class="rules">
+    {%- for r in c.training.rules %}
+    <div class="card rule"><div class="k">{{ r.k }}</div><h3>{{ r.h }}</h3><p class="small" style="color:var(--ink2)">{{ r.p }}</p></div>
+    {%- endfor %}
+  </div>
+</section>
+
+<!-- TARGETS -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">{{ c.targets.eyebrow or 'Next 4 weeks' }}</div>
+    <h2>{{ c.targets.h2 }}</h2>
+    <p class="lead">{{ c.targets.lead }}</p>
+  </div>
+  <div class="card panel scroll-x">
+    <table class="tgt tgt-main">
+      <thead><tr><th>項目</th><th>{{ c.targets.actual_label or '期間の実績' }}</th><th></th><th>次の目標</th><th>具体策</th></tr></thead>
+      <tbody>
+        {%- for r in c.targets.rows %}
+        <tr><td>{{ r[0] }}</td><td class="n">{{ r[1] }}</td><td class="arrow">→</td><td class="n">{{ r[2] }}</td><td>{{ r[3] }}</td></tr>
+        {%- endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="grid2">
+    {%- if c.targets.swaps %}
+    <div class="card panel" style="display:flex;flex-direction:column;gap:10px">
+      <h3>{{ c.targets.swaps_title or '置き換え表' }}</h3>
+      <table class="tgt">
+        <thead><tr><th>いつもの</th><th></th><th>置き換え</th><th>{{ c.targets.swap_diff_label or '差' }}</th></tr></thead>
+        <tbody>
+          {%- for s in c.targets.swaps %}
+          <tr><td>{{ s[0] }}</td><td class="arrow">→</td><td>{{ s[1] }}</td><td class="n">{{ s[2] }}</td></tr>
+          {%- endfor %}
+        </tbody>
+      </table>
+    </div>
+    {%- endif %}
+    <div class="card check" id="checklist">
+      <div class="prog" style="padding:12px 0 6px"><span>{{ c.targets.checklist_title or '4週間チャレンジ' }}</span><div class="meter"><i id="prog-bar" style="width:0"></i></div><span id="prog-txt" class="tab">0 / {{ c.targets.checklist|length }}</span></div>
+      {%- for item in c.targets.checklist %}
+      <label for="chk{{ loop.index0 }}"><input type="checkbox" id="chk{{ loop.index0 }}"><span>{{ item }}</span></label>
+      {%- endfor %}
+    </div>
+  </div>
+</section>
+
+<footer class="notes">
+  <b>データについて</b>
+  <ul>
+    <li>対象：Bite-Log スプレッドシートの食事記録のうち、{{ S.period.start }}〜{{ S.period.end }} に朝食・昼食・夕食がすべて記録された{{ S.logging.full_days }}日を集計。間食は同日の記録を合算しています。</li>
+    <li>栄養値は写真やメモからAIが推定した値で、実測ではありません。記録されていない飲み物や間食がある場合、実際の摂取量は表示より多くなります。</li>
+    <li>目標値は {{ S.goals.source }} シート（{{ '{:,.0f}'.format(S.goals.k) }} kcal / P {{ '%.0f'|format(S.goals.p) }} g / F {{ '%.0f'|format(S.goals.f) }} g / C {{ '%.0f'|format(S.goals.c) }} g）。{% if S.inbody.avg_weight %}体重あたりの値は期間中の InBody 平均体重 {{ S.inbody.avg_weight }} kg で計算。{% endif %}</li>
+    {%- for n in c.notes %}
+    <li>{{ n }}</li>
+    {%- endfor %}
+  </ul>
+</footer>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+if(location.hash==='#pdf') document.documentElement.classList.add('pdf');
+const DATA = {{ chart_json }};
+const DETAIL = {{ detail_json }};
+const CHECK_KEY = 'bitelog-coach-{{ S.period.start }}-{{ S.period.end }}';
+const GOAL = DATA.goal;
+const NS = 'http://www.w3.org/2000/svg';
+const $ = s => document.querySelector(s);
+const fmt = n => Math.round(n).toLocaleString('ja-JP');
+const WD = ['日','月','火','水','木','金','土'];
+const wdOf = d => WD[new Date(d+'T00:00:00').getDay()];
+const md = d => `${+d.slice(5,7)}/${+d.slice(8,10)}`;
+const ceilTo = (v,s) => Math.ceil(v/s)*s;
+function el(tag, attrs, parent){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent) parent.appendChild(e); return e; }
+function svg(w,h,label){ const s=el('svg',{viewBox:`0 0 ${w} ${h}`,width:'100%',role:'img','aria-label':label}); s.style.display='block'; s.style.overflow='visible'; return s; }
+function txt(p,x,y,s,o={}){ const t=el('text',Object.assign({x,y,fill:'var(--muted)','font-size':11},o),p); t.textContent=s; return t; }
+function bar(x,y0,y,w,r){ r=Math.min(r,w/2,Math.max(0,y0-y)); return `M${x-w/2},${y0} V${y+r} q0,-${r} ${r},-${r} h${w-2*r} q${r},0 ${r},${r} V${y0} Z`; }
+
+/* tooltip */
+const tip=$('#tip');
+function showTip(html,ev){ tip.innerHTML=html; tip.classList.add('on'); moveTip(ev); }
+function moveTip(ev){ const pad=14; let x=ev.clientX+pad, y=ev.clientY+pad; const r=tip.getBoundingClientRect(); if(x+r.width>innerWidth-8) x=ev.clientX-r.width-pad; if(y+r.height>innerHeight-8) y=ev.clientY-r.height-pad; tip.style.left=x+'px'; tip.style.top=y+'px'; }
+function hideTip(){ tip.classList.remove('on'); }
+function bindTip(node,html){ node.addEventListener('pointerenter',e=>showTip(html,e)); node.addEventListener('pointermove',moveTip); node.addEventListener('pointerleave',hideTip); }
+
+/* inbody small multiples */
+(function(){
+  const ib=DATA.inbody, host=$('#ib-charts'); // [date, weight, fat%, muscle, fatMass, bmr]
+  if(!host || !ib.length) return;
+  const metrics=[{i:1,name:'体重',unit:'kg'},{i:2,name:'体脂肪率',unit:'%'},{i:3,name:'筋肉量',unit:'kg'}];
+  const day=86400000, tA=new Date(ib[0][0]).getTime(), tB=new Date(ib[ib.length-1][0]).getTime();
+  const pad=Math.max(5*day,(tB-tA)*0.04), t0=tA-pad, t1=tB+pad;
+  const gaps=[]; for(let k=1;k<ib.length;k++){ if((new Date(ib[k][0])-new Date(ib[k-1][0]))/day>21) gaps.push(k); }
+  let W=320; const H=190,L=34,R=40,T=14,B=26;
+  const xs=d=>L+(new Date(d).getTime()-t0)/(t1-t0)*(W-L-R);
+  metrics.forEach(m=>{
+    const vals=ib.map(r=>r[m.i]);
+    let lo=Math.floor(Math.min(...vals)-0.5), hi=Math.ceil(Math.max(...vals)+0.5);
+    const step=(hi-lo)>6?2:1; if((hi-lo)%step) hi+=1;
+    const card=document.createElement('div'); card.className='card panel'; card.style.cssText='display:flex;flex-direction:column;gap:6px';
+    host.appendChild(card); W=Math.max(280,(card.clientWidth-40)||320);
+    const first=vals[0], last=vals[vals.length-1], diff=last-first;
+    const good = m.i===2 ? diff<=0 : (m.i===3 ? diff>=0 : true);
+    card.innerHTML=`<div class="chart-title">${m.name}<span class="muted">${md(ib[0][0])} → ${md(ib[ib.length-1][0])}</span></div>
+      <div style="display:flex;align-items:baseline;gap:8px"><span class="num" style="font-size:28px">${last.toFixed(1)}</span><span class="muted small">${m.unit}</span>${ib.length>1?`<span class="small ${m.i===1?'muted':(good?'delta-up':'delta-warn')}">${diff>=0?'+':'−'}${Math.abs(diff).toFixed(1)} ${m.unit}</span>`:''}</div>`;
+    const s=svg(W,H,`${m.name}の推移`);
+    const ys=v=>T+(hi-v)/(hi-lo)*(H-T-B);
+    for(let v=lo; v<=hi+1e-9; v+=step){ el('line',{x1:L,x2:W-R,y1:ys(v),y2:ys(v),stroke:'var(--line)','stroke-width':1},s); txt(s,L-6,ys(v)+4,v.toFixed(0),{'text-anchor':'end'}); }
+    for(let d=new Date(t0); d<=new Date(t1); d.setDate(d.getDate()+1)){ if(d.getDate()===1){ const iso=d.toISOString().slice(0,10); txt(s,xs(iso),H-8,(d.getMonth()+1)+'月',{'text-anchor':'middle'}); } }
+    gaps.forEach(k=>{ const a=new Date(ib[k-1][0]).getTime()+day, b=new Date(ib[k][0]).getTime()-day;
+      const xa=xs(new Date(a).toISOString().slice(0,10)), xb=xs(new Date(b).toISOString().slice(0,10));
+      el('rect',{x:xa,y:T,width:Math.max(0,xb-xa),height:H-T-B,fill:'var(--surface2)'},s);
+      if(xb-xa>44) txt(s,(xa+xb)/2,T+14,'測定なし',{'text-anchor':'middle','font-size':10});
+      el('line',{x1:xs(ib[k-1][0]),y1:ys(ib[k-1][m.i]),x2:xs(ib[k][0]),y2:ys(ib[k][m.i]),stroke:'var(--axis)','stroke-width':1.5,'stroke-dasharray':'3 4'},s); });
+    const segs=[]; let cur=[]; ib.forEach((r,k)=>{ if(gaps.includes(k)){ segs.push(cur); cur=[]; } cur.push(r); }); segs.push(cur);
+    segs.forEach(seg=>{ if(seg.length>1) el('polyline',{points:seg.map(r=>`${xs(r[0])},${ys(r[m.i])}`).join(' '),fill:'none',stroke:'var(--ink)','stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'},s); });
+    ib.forEach((r,k)=>{
+      const isLast=k===ib.length-1, odd=(DATA.inbody_outliers||[]).includes(r[0]);
+      el('circle',{cx:xs(r[0]),cy:ys(r[m.i]),r:isLast?5.5:4,fill:isLast?'var(--accent)':(odd?'var(--surface)':'var(--ink)'),stroke:odd?'var(--ink)':'var(--surface)','stroke-width':odd?1.5:2},s);
+      const hit=el('circle',{cx:xs(r[0]),cy:ys(r[m.i]),r:11,fill:'transparent',class:'hit'},s);
+      bindTip(hit,`<b>${r[0]}</b><br>${m.name} ${r[m.i]} ${m.unit}${odd?'<br>前後から外れた1回だけの値（測定ブレの可能性）':''}`);
+    });
+    if(m.i!==1 && ib.length>2){ // label the worst point (fat% high / muscle low) unless it is an endpoint
+      const ex=ib.reduce((a,b)=>(m.i===3?b[m.i]<a[m.i]:b[m.i]>a[m.i])?b:a);
+      if(ex!==ib[0] && ex!==ib[ib.length-1] && !(DATA.inbody_outliers||[]).includes(ex[0])) txt(s,xs(ex[0]),ys(ex[m.i])+(m.i===3?18:-10),`${md(ex[0])} ${ex[m.i].toFixed(1)}`,{'text-anchor':'middle',fill:'var(--ink)','font-size':11});
+    }
+    const lr=ib[ib.length-1];
+    txt(s,xs(lr[0])+9,ys(lr[m.i])+4,lr[m.i].toFixed(1),{fill:'var(--ink)','font-size':12,'font-weight':700});
+    card.appendChild(s);
+  });
+})();
+
+/* monthly */
+function monthChart(host,key,goal,band,unit,color){
+  const ms=DATA.months, vals=ms.map(d=>d[key]||0);
+  const top=Math.max(goal,...vals,band?band[1]:0)*1.12;
+  const step=key==='k'?500:(top>150?40:20), max=ceilTo(top,step);
+  const W=440,H=220,L=40,R=10,T=18,B=30;
+  const s=svg(W,H,'月別'+unit);
+  const ys=v=>T+(max-v)/max*(H-T-B);
+  for(let v=0;v<=max;v+=step){ el('line',{x1:L,x2:W-R,y1:ys(v),y2:ys(v),stroke:v===0?'var(--axis)':'var(--line)','stroke-width':1},s); txt(s,L-6,ys(v)+4,fmt(v),{'text-anchor':'end'}); }
+  if(band) el('rect',{x:L,width:W-L-R,y:ys(band[1]),height:ys(band[0])-ys(band[1]),fill:'var(--band)'},s);
+  const bw=(W-L-R)/ms.length, cw=Math.min(24,bw*.5);
+  ms.forEach((d,i)=>{
+    const x=L+bw*i+bw/2; txt(s,x,H-10,(+d.m.slice(5))+'月',{'text-anchor':'middle'});
+    if(!d.n) return;
+    const v=d[key], y=ys(v);
+    el('path',{d:bar(x,ys(0),y,cw,4),fill:v>=goal?color:'color-mix(in srgb, '+color+' 45%, var(--surface))'},s);
+    txt(s,x,y-6,key==='k'?fmt(v):v.toFixed(0),{'text-anchor':'middle',fill:'var(--ink)','font-size':11.5,'font-weight':700});
+    const hit=el('rect',{x:x-bw/2,y:T,width:bw,height:H-T-B,fill:'transparent',class:'hit'},s);
+    bindTip(hit,`<b>${+d.m.slice(5)}月</b>（${d.n}日）<br>${fmt(d.k)} kcal · P ${d.p} g<br>F ${d.f} g · C ${d.c} g`);
+  });
+  el('line',{x1:L,x2:W-R,y1:ys(goal),y2:ys(goal),stroke:'var(--ink)','stroke-width':1.5},s);
+  txt(s,L+4,ys(goal)-5,'目標 '+fmt(goal),{'text-anchor':'start',fill:'var(--ink)','font-size':11});
+  host.appendChild(s);
+}
+monthChart($('#protein-month'),'p',GOAL.p,DATA.weight?[DATA.weight*1.6,DATA.weight*2.0]:null,'たんぱく質','var(--p)');
+monthChart($('#kcal-month'),'k',GOAL.k,null,'カロリー','var(--p)');
+(function(){ const thin=DATA.months.filter(m=>m.n && m.n<5).map(m=>`${+m.m.slice(5)}月は${m.n}日分`);
+  const n=document.createElement('p'); n.className='small muted'; n.textContent='濃い色＝目標以上の月'+(thin.length?' · '+thin.join('、')+'のみ':''); $('#protein-month').appendChild(n); })();
+
+/* daily */
+let selectDay=()=>{};
+(function(){
+  const ds=DATA.days, [lo,hi]=DATA.daily_counts.band;
+  const W=Math.max(440,$('#daily').clientWidth||900),H=W<600?240:280,L=40,R=8,T=16,B=34, max=ceilTo(Math.max(...ds.map(d=>d.k),hi)*1.05,1000);
+  const s=svg(W,H,'1日の総摂取カロリー');
+  const ys=v=>T+(max-v)/max*(H-T-B);
+  el('rect',{x:L,width:W-L-R,y:ys(hi),height:ys(lo)-ys(hi),fill:'var(--band)'},s);
+  for(let v=0;v<=max;v+=1000){ el('line',{x1:L,x2:W-R,y1:ys(v),y2:ys(v),stroke:v===0?'var(--axis)':'var(--line)','stroke-width':1},s); txt(s,L-6,ys(v)+4,fmt(v),{'text-anchor':'end'}); }
+  const bw=(W-L-R)/ds.length, cw=Math.max(3,Math.min(9,bw-2));
+  let lastM='', lastX=-99;
+  ds.forEach((d,i)=>{
+    const x=L+bw*i+bw/2, y=ys(Math.min(d.k,max));
+    const col = (d.k>=lo&&d.k<=hi)?'var(--p)':(d.k>hi?'var(--f)':'color-mix(in srgb, var(--p) 40%, var(--surface))');
+    el('path',{d:bar(x,ys(0),y,cw,2),fill:col},s);
+    const m=d.d.slice(0,7); if(m!==lastM){ lastM=m; if(x-lastX>26){ txt(s,x-cw/2,H-12,(+m.slice(5))+'月',{'text-anchor':'start'}); lastX=x; } el('line',{x1:x-cw/2,x2:x-cw/2,y1:ys(0),y2:ys(0)+5,stroke:'var(--axis)'},s); }
+    const hit=el('rect',{x:x-bw/2,y:T,width:bw,height:H-T-B,fill:'transparent',class:'hit',tabindex:0},s);
+    bindTip(hit,`<b>${d.d}（${wdOf(d.d)}）</b><br>${fmt(d.k)} kcal<br>P ${d.p} g · F ${d.f} g · C ${d.c} g`);
+    hit.addEventListener('click',()=>{ selectDay(d.d); $('#cal').scrollIntoView({behavior:'smooth',block:'center'}); });
+  });
+  el('line',{x1:L,x2:W-R,y1:ys(GOAL.k),y2:ys(GOAL.k),stroke:'var(--ink)','stroke-width':1.5},s);
+  const top=ds.reduce((a,b)=>b.k>a.k?b:a), ti=ds.indexOf(top), tx=L+bw*ti+bw/2;
+  const right=tx>W*0.5; txt(s,right?tx-8:tx+8,ys(top.k)+4,`${md(top.d)} ${fmt(top.k)} kcal`,{'text-anchor':right?'end':'start',fill:'var(--ink)','font-size':11.5,'font-weight':700});
+  $('#daily').appendChild(s);
+  const c=DATA.daily_counts, lg=document.createElement('div'); lg.className='legend'; lg.style.marginTop='8px';
+  lg.innerHTML=`<span><i style="background:var(--p)"></i>目標±10%以内（${c.in}日）</span><span><i style="background:color-mix(in srgb, var(--p) 40%, var(--surface))"></i>不足（${fmt(lo)}未満・${c.under}日）</span><span><i style="background:var(--f)"></i>超過（${fmt(hi)}超・${c.over}日）</span>`;
+  $('#daily').appendChild(lg);
+})();
+
+/* PFC */
+(function(){
+  const a=DATA.pfc, g=DATA.pfc_goal, rows=[[`あなた（${DATA.days.length}日平均）`,a.p,a.f,a.c],['目標',g.p,g.f,g.c]];
+  const W=Math.max(380,$('#pfc').clientWidth||900),rowH=34,gap=22,L=W<600?118:150,H=rows.length*(rowH+gap);
+  const s=svg(W,H,'PFCバランス');
+  rows.forEach((r,i)=>{
+    const y=i*(rowH+gap)+4; txt(s,0,y+rowH/2+5,r[0],{fill:'var(--ink)','font-size':W<600?11.5:13});
+    const tot=r[1]+r[2]+r[3]; let x=L; const tw=W-L; const cols=['var(--p)','var(--f)','var(--c)'], names=['P','F','C'];
+    [r[1],r[2],r[3]].forEach((v,k)=>{
+      const w=tw*v/tot - (k<2?2:0);
+      el('rect',{x,y,width:w,height:rowH,rx:k===2?4:0,fill:cols[k]},s);
+      if(k===2) el('rect',{x,y,width:6,height:rowH,fill:cols[k]},s);
+      if(w>48) txt(s,x+(W<600?6:10),y+rowH/2+5,`${names[k]} ${v.toFixed(1)}%`,{fill:'#fff','font-size':W<600?11.5:13,'font-weight':700});
+      x+=w+(k<2?2:0);
+    });
+  });
+  $('#pfc').appendChild(s);
+})();
+
+/* meals */
+(function(){
+  const mp=DATA.meal_p, max=Math.max(45,...mp.map(r=>r[1]+5));
+  $('#mealp').innerHTML=mp.map(([n,v])=>`<div class="mrow"><span>${n}</span><span class="mtrack"><i style="width:${v/max*100}%;${v<20?'background:color-mix(in srgb, var(--p) 40%, var(--surface))':''}"></i><span class="th" style="left:${20/max*100}%"></span></span><span class="v">${v} g</span></div>`).join('');
+  const mk=DATA.meal_k, tot=mk.reduce((a,b)=>a+b[1],0)||1;
+  const cols=['var(--banana)','var(--p)','var(--f)','var(--c)'];
+  const W=Math.max(300,$('#mealk').clientWidth||460),H=32; const s=svg(W,H,'食事ごとのカロリー配分'); let x=0;
+  mk.forEach(([n,v],k)=>{ const w=Math.max(0,W*v/tot-(k<3?2:0)); el('rect',{x,y:0,width:w,height:H,rx:(k===0||k===3)?4:0,fill:cols[k]},s); if(w>80) txt(s,x+8,H/2+4.5,`${n} ${Math.round(v/tot*100)}%`,{fill:'#fff','font-size':12,'font-weight':700}); const hit=el('rect',{x,y:0,width:w,height:H,fill:'transparent',class:'hit'},s); bindTip(hit,`<b>${n}</b><br>平均 ${v} kcal（${Math.round(v/tot*100)}%）`); x+=w+(k<3?2:0); });
+  $('#mealk').appendChild(s);
+  $('#mealk-legend').innerHTML=mk.map(([n,v],k)=>`<span><i style="background:${cols[k]}"></i>${n} ${v} kcal（${Math.round(v/tot*100)}%）</span>`).join('');
+  const b=$('#banana'); if(b) b.innerHTML=Array.from({length:DATA.counter.total},(_,i)=>`<i class="${i<DATA.counter.count?'b':''}"></i>`).join('');
+})();
+
+/* calendar */
+(function(){
+  const cal=DATA.cal, byD=Object.fromEntries(DATA.days.map(d=>[d.d,d]));
+  const g=4, L=28, T=22;
+  const start=new Date(cal[0][0]+'T00:00:00'); const offset=(start.getDay()+6)%7; // Monday=0
+  const weeks=Math.ceil((cal.length+offset)/7);
+  const avail=($('#cal').parentElement.clientWidth||900)-L-6;
+  const cell=Math.max(11,Math.min(weeks<20?34:24,Math.floor(avail/weeks)-g));
+  const W=L+weeks*(cell+g)+4, H=T+7*(cell+g)+4;
+  const s=svg(W,H,'記録カレンダー'); s.setAttribute('width',W); s.style.maxWidth='none';
+  ['月','火','水','木','金','土','日'].forEach((n,i)=>txt(s,0,T+i*(cell+g)+cell-7,n,{'font-size':11}));
+  const pc=p=>p<60?'var(--s1)':p<80?'var(--s2)':p<100?'var(--s3)':'var(--s4)';
+  let lastM='', lastX=-99; const rects={};
+  cal.forEach(([d,st],i)=>{
+    const idx=i+offset, wk=Math.floor(idx/7), dw=idx%7; const x=L+wk*(cell+g), y=T+dw*(cell+g);
+    const m=d.slice(5,7); if(m!==lastM){ lastM=m; const lx=dw<=3?x:x+cell+g; if(lx-lastX>28){ txt(s,lx,13,(+m)+'月',{'font-size':11.5}); lastX=lx; } }
+    let attrs={x,y,width:cell,height:cell,rx:3};
+    if(st==='full'){ attrs.fill=pc(byD[d].p); }
+    else if(st==='part'){ attrs.fill='var(--surface2)'; attrs.stroke='var(--axis)'; attrs['stroke-width']=1; }
+    else { attrs.fill='transparent'; attrs.stroke='var(--line)'; attrs['stroke-width']=1; }
+    const r=el('rect',attrs,s); rects[d]=r;
+    if(st==='part') el('line',{x1:x+5,y1:y+cell-5,x2:x+cell-5,y2:y+5,stroke:'var(--axis)','stroke-width':1.2},s);
+    const hit=el('rect',{x:x-1,y:y-1,width:cell+2,height:cell+2,fill:'transparent',class:'hit',tabindex:st==='full'?0:-1},s);
+    const info= st==='full'?`<b>${d}（${wdOf(d)}）</b><br>${fmt(byD[d].k)} kcal · P ${byD[d].p} g`: st==='part'?`<b>${d}</b><br>一部の食事のみ記録`:`<b>${d}</b><br>記録なし`;
+    bindTip(hit,info);
+    if(st==='full'){ hit.addEventListener('click',()=>selectDay(d)); hit.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); selectDay(d);} }); }
+  });
+  $('#cal').appendChild(s);
+  $('#cal-legend').innerHTML=`<span>3食そろった日のたんぱく質：</span><span><i style="background:var(--s1)"></i>60 g未満</span><span><i style="background:var(--s2)"></i>60–80</span><span><i style="background:var(--s3)"></i>80–100</span><span><i style="background:var(--s4)"></i>100 g以上</span><span><i style="background:var(--surface2);box-shadow:0 0 0 1px var(--axis) inset"></i>一部のみ</span><span><i style="box-shadow:0 0 0 1px var(--line) inset"></i>記録なし</span>`;
+  let sel=null;
+  selectDay=function(d){
+    const day=byD[d]; if(!day) return;
+    if(sel){ sel.removeAttribute('stroke'); sel.removeAttribute('stroke-width'); }
+    sel=rects[d]; sel.setAttribute('stroke','var(--accent)'); sel.setAttribute('stroke-width',2.5);
+    $('#detail').innerHTML=`<div class="chart-title"><span>${d}（${wdOf(d)}）の食事</span><span class="muted">${fmt(day.k)} kcal（目標の${Math.round(day.k/GOAL.k*100)}%） · P ${day.p} g · F ${day.f} g · C ${day.c} g</span></div>
+      <table><tbody>${day.m.map(m=>`<tr><td class="ty">${m[0]}</td><td>${String(m[1]).replace(/</g,'&lt;')}</td><td class="n">${fmt(m[2])} kcal</td><td class="n">P ${m[3]} g</td></tr>`).join('')}</tbody></table>`;
+  };
+  selectDay(DATA.days[DATA.days.length-1].d);
+})();
+
+/* weekday */
+(function(){
+  const order=['月','火','水','木','金','土','日'], wds=DATA.weekdays;
+  const vals=wds.map(w=>w.k||0), peak=Math.max(...vals);
+  const W=440,H=220,L=40,R=10,T=18,B=30,max=ceilTo(Math.max(peak,GOAL.k)*1.1,500);
+  const s=svg(W,H,'曜日別平均カロリー'); const ys=v=>T+(max-v)/max*(H-T-B);
+  for(let v=0;v<=max;v+=500){ el('line',{x1:L,x2:W-R,y1:ys(v),y2:ys(v),stroke:v===0?'var(--axis)':'var(--line)','stroke-width':1},s); txt(s,L-6,ys(v)+4,fmt(v),{'text-anchor':'end'}); }
+  const bw=(W-L-R)/7, cw=24;
+  wds.forEach((w,i)=>{ const x=L+bw*i+bw/2; txt(s,x,H-10,`${w.wd}（${w.n}）`,{'text-anchor':'middle'}); if(!w.n) return;
+    const y=ys(w.k), hot=w.k===peak && peak>GOAL.k*1.1 && w.n>=4; // don't spotlight a weekday backed by a handful of days
+    el('path',{d:bar(x,ys(0),y,cw,4),fill:hot?'var(--f)':'color-mix(in srgb, var(--p) 55%, var(--surface))'},s);
+    txt(s,x,y-6,fmt(w.k),{'text-anchor':'middle',fill:'var(--ink)','font-size':11.5,'font-weight':700});
+    const hit=el('rect',{x:x-bw/2,y:T,width:bw,height:H-T-B,fill:'transparent',class:'hit'},s); bindTip(hit,`<b>${w.wd}曜日</b><br>平均 ${fmt(w.k)} kcal（${w.n}日）`);
+  });
+  el('line',{x1:L,x2:W-R,y1:ys(GOAL.k),y2:ys(GOAL.k),stroke:'var(--ink)','stroke-width':1.5},s);
+  $('#weekday').appendChild(s);
+})();
+
+/* segmental + goal (InBody result sheet) */
+(function(){
+  if(!DETAIL) return;
+  function segChart(host,rows,label,isFat){
+    if(!host || !rows) return;
+    const W=Math.max(300,host.clientWidth||440), rowH=26, L=40, R=100, lo=60, hi=140;
+    const H=rows.length*rowH+22; const s=svg(W,H,label);
+    const xs=v=>L+(Math.min(hi,Math.max(lo,v))-lo)/(hi-lo)*(W-L-R);
+    [60,80,100,120,140].forEach(v=>{ el('line',{x1:xs(v),x2:xs(v),y1:0,y2:H-18,stroke:'var(--line)','stroke-width':1},s); txt(s,xs(v),H-4,v+'%',{'text-anchor':'middle','font-size':10}); });
+    rows.forEach(([n,kg,pct],i)=>{
+      const y=i*rowH+5;
+      const col = isFat ? (pct>110?'var(--f)':'color-mix(in srgb, var(--f) 45%, var(--surface))') : (pct<95?'color-mix(in srgb, var(--p) 45%, var(--surface))':'var(--p)');
+      txt(s,0,y+13,n,{fill:'var(--ink)','font-size':12});
+      el('path',{d:`M${xs(lo)},${y} H${xs(pct)-4} q4,0 4,4 v8 q0,4 -4,4 H${xs(lo)} Z`,fill:col},s);
+      txt(s,W-R+8,y+13,`${kg} kg · ${pct}%`,{fill:'var(--ink)','font-size':11.5,'font-weight':700});
+      const hit=el('rect',{x:0,y:y-4,width:W,height:rowH,fill:'transparent',class:'hit'},s); bindTip(hit,`<b>${n}</b><br>${kg} kg（標準の ${pct}%）`);
+    });
+    el('line',{x1:xs(100),x2:xs(100),y1:0,y2:H-18,stroke:'var(--ink)','stroke-width':1.5},s);
+    host.appendChild(s);
+  }
+  segChart($('#seg-lean'),DETAIL.lean,'部位別の筋肉量',false);
+  segChart($('#seg-fat'),DETAIL.fat,'部位別の体脂肪量',true);
+  const G=DETAIL.goal, host=$('#goalbody'); if(!G || !host) return;
+  const rows=[['現在',G.muscle_now,G.fat_now,G.weight_now],['理想',+(G.muscle_now+G.muscle_change).toFixed(1),+(G.fat_now+G.fat_change).toFixed(1),G.weight_target]];
+  const W=Math.max(300,host.clientWidth||440), L=44, rowH=30, H=2*(rowH+20)+22, max=ceilTo(Math.max(G.weight_now,G.weight_target)*1.04,10);
+  const s=svg(W,H,'現在とInBodyの理想'); const xs=v=>L+v/max*(W-L-8);
+  rows.forEach(([n,mu,fa,wt],i)=>{
+    const y=i*(rowH+20)+18;
+    txt(s,0,y+rowH/2+5,n,{fill:'var(--ink)','font-size':12.5,'font-weight':700});
+    el('rect',{x:xs(0),y,width:xs(mu)-xs(0)-2,height:rowH,fill:'var(--p)'},s);
+    txt(s,xs(0)+8,y+rowH/2+5,`筋肉 ${mu.toFixed(1)}`,{fill:'#fff','font-size':12,'font-weight':700});
+    el('rect',{x:xs(mu),y,width:Math.max(2,xs(mu+fa)-xs(mu)-2),height:rowH,fill:'var(--f)'},s);
+    if(xs(mu+fa)-xs(mu)>50) txt(s,xs(mu)+5,y+rowH/2+5,`脂肪 ${fa.toFixed(1)}`,{fill:'#fff','font-size':11,'font-weight':700});
+    el('rect',{x:xs(mu+fa),y,width:Math.max(2,xs(wt)-xs(mu+fa)),height:rowH,fill:'var(--axis)'},s);
+    txt(s,xs(wt),y-5,`${wt.toFixed(1)} kg`,{'text-anchor':'end',fill:'var(--ink)','font-size':11.5,'font-weight':700});
+  });
+  for(let v=0;v<=max;v+=20) txt(s,xs(v),H-4,v+' kg',{'text-anchor':'middle','font-size':10});
+  host.appendChild(s);
+  const lg=document.createElement('div'); lg.className='legend'; lg.style.marginTop='6px';
+  lg.innerHTML='<span><i style="background:var(--p)"></i>筋肉量</span><span><i style="background:var(--f)"></i>体脂肪量</span><span><i style="background:var(--axis)"></i>骨・ミネラルほか</span>';
+  host.appendChild(lg);
+})();
+
+/* checklist (remembered per viewer in this browser) */
+(function(){
+  const host=$('#checklist'), boxes=[...host.querySelectorAll('input[type=checkbox]')]; let st={};
+  try{ st=JSON.parse(localStorage.getItem(CHECK_KEY)||'{}'); }catch(e){ st={}; }
+  boxes.forEach((b,i)=>{ b.checked=!!st[i]; });
+  const upd=()=>{ const n=boxes.filter(b=>b.checked).length; $('#prog-bar').style.width=(boxes.length?n/boxes.length*100:0)+'%'; $('#prog-txt').textContent=`${n} / ${boxes.length}`; };
+  host.addEventListener('change',e=>{ const i=boxes.indexOf(e.target); if(i<0) return; st[i]=e.target.checked; try{ localStorage.setItem(CHECK_KEY,JSON.stringify(st)); }catch(err){} upd(); });
+  upd();
+})();
+
+/* PDF export: size the page to the whole document so it reads like one long phone page */
+if(location.hash==='#pdf'){
+  const fit=()=>{ const h=Math.ceil(document.documentElement.scrollHeight)+24, w=document.documentElement.clientWidth;
+    let st=document.getElementById('pdf-page'); if(!st){ st=document.createElement('style'); st.id='pdf-page'; document.head.appendChild(st); }
+    st.textContent=`@page{size:${w}px ${h}px;margin:0}`; };
+  fit(); (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(fit);
+}
+</script>
