@@ -46,6 +46,12 @@ export default async function handler(req: any, res: any): Promise<void> {
     images.push({ base64: body.imageBase64, mimeType: body.mimeType })
   }
 
+  // 何も入力が無いとAIが典型的な献立を捏造するので、呼び出さずに返す
+  if (!body.memo?.trim() && !body.note?.trim() && images.length === 0) {
+    res.status(400).json({ error: 'メモ・備考・写真のいずれかを入力してください' })
+    return
+  }
+
   const genAI = new GoogleGenerativeAI(apiKey)
   const generationConfig: Omit<ModelParams, 'model'> = {
     generationConfig: {
@@ -94,39 +100,62 @@ export default async function handler(req: any, res: any): Promise<void> {
     parts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } })
   }
 
-  // 混雑(503等)時は同じモデルで再試行し、それでもダメなら別モデルにフォールバック
-  const MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite']
-  const ATTEMPTS_PER_MODEL = 2
+  // 無料枠はモデルごとに1日の回数上限があるため、上限(429)・混雑(503)・応答遅延時は次のモデルへ切り替える。
+  // 関数の実行上限(vercel.json の maxDuration: 45秒)内に収まるよう、全体の持ち時間で打ち切る。
+  const MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest']
+  const deadline = Date.now() + 40_000
   let lastError: unknown
+  let quotaExceeded = false
   for (const modelName of MODELS) {
-    const model = genAI.getGenerativeModel({ model: modelName, ...generationConfig })
-    for (let attempt = 0; attempt < ATTEMPTS_PER_MODEL; attempt++) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const remaining = deadline - Date.now()
+      if (remaining < 3_000) break
+      const model = genAI.getGenerativeModel(
+        { model: modelName, ...generationConfig },
+        { timeout: Math.min(25_000, remaining) },
+      )
       try {
         const result = await model.generateContent(parts)
-        res.status(200).json({ raw: JSON.stringify(sumItems(JSON.parse(result.response.text()))) })
+        const summed = sumItems(JSON.parse(result.response.text()))
+        // 入力があるのに品目が空 = 推定に失敗しているので次のモデルで試す
+        if (summed.items.length === 0) throw new Error(`empty items from ${modelName}`)
+        res.status(200).json({ raw: JSON.stringify(summed) })
         return
       } catch (e) {
         lastError = e
-        if (!isOverloaded(e)) {
+        const kind = classifyError(e)
+        if (kind === 'fatal') {
           res.status(502).json({ error: String(e) })
           return
         }
-        if (attempt < ATTEMPTS_PER_MODEL - 1) await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)))
+        if (kind === 'quota') quotaExceeded = true
+        // 同じモデルで再試行するのは一時的な混雑のときだけ
+        if (kind !== 'overloaded') break
+        await new Promise((r) => setTimeout(r, 1500))
       }
     }
   }
-  res.status(503).json({
-    error: `AIサーバーが混雑しています。少し時間をおいて再度お試しください。(${String(lastError)})`,
+  res.status(quotaExceeded ? 429 : 503).json({
+    error: quotaExceeded
+      ? `本日のAI利用回数の上限に達しました。時間をおいて再度お試しください。(${String(lastError)})`
+      : `AIサーバーが混雑しています。少し時間をおいて再度お試しください。(${String(lastError)})`,
   })
 }
 
-function isOverloaded(e: unknown): boolean {
+function classifyError(e: unknown): 'quota' | 'overloaded' | 'next-model' | 'fatal' {
   const msg = String(e)
-  return (
+  if (msg.includes('[429') || msg.includes('Too Many Requests') || msg.includes('quota')) return 'quota'
+  if (
     msg.includes('503') || msg.includes('Service Unavailable') ||
     msg.includes('high demand') || msg.includes('overloaded') ||
     msg.includes('[500') || msg.includes('Internal Server Error')
-  )
+  ) return 'overloaded'
+  // タイムアウト・モデル提供終了(404)・応答の解析失敗・品目なしは別モデルで試す価値がある
+  if (
+    msg.includes('abort') || msg.includes('timeout') || msg.includes('[404') ||
+    e instanceof SyntaxError || msg.includes('empty items')
+  ) return 'next-model'
+  return 'fatal'
 }
 
 interface FoodItem {

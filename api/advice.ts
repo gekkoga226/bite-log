@@ -100,7 +100,7 @@ export default async function handler(req: any, res: any): Promise<void> {
   ]
 
   // 混雑(503等)時は同じモデルで再試行し、それでもダメなら別モデルにフォールバック
-  const MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite']
+  const MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest']
   const ATTEMPTS_PER_MODEL = 2
   let lastError: unknown
   for (const modelName of MODELS) {
@@ -130,6 +130,8 @@ function isOverloaded(e: unknown): boolean {
   return (
     msg.includes('503') || msg.includes('Service Unavailable') ||
     msg.includes('high demand') || msg.includes('overloaded') ||
-    msg.includes('[500') || msg.includes('Internal Server Error')
+    msg.includes('[500') || msg.includes('Internal Server Error') ||
+    // 無料枠の1日上限(429)はモデルごとなので、別モデルに切り替えれば続行できる
+    msg.includes('[429') || msg.includes('Too Many Requests')
   )
 }
