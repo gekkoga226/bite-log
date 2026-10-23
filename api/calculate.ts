@@ -105,7 +105,8 @@ export default async function handler(req: any, res: any): Promise<void> {
 
   // 無料枠はモデルごとに1日の回数上限があるため、上限(429)・混雑(503)・応答遅延時は次のモデルへ切り替える。
   // 関数の実行上限(vercel.json の maxDuration: 45秒)内に収まるよう、全体の持ち時間で打ち切る。
-  const MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest']
+  // 3.1 Flash-Lite は無料枠が 500回/日（2.5 Flash系は 20回/日）なのでメインにする
+  const MODELS = ['gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest']
   const deadline = Date.now() + 40_000
   let lastError: unknown
   let quotaExceeded = false
