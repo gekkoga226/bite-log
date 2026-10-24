@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { fetchMeals, deleteMeal } from '../services/sheets'
 import { aggregateDay } from '../lib/aggregate'
+import { mealLabel } from '../lib/mealLabel'
 import { toDateString, addDays } from '../lib/date'
 import type { Goals } from '../lib/goals'
 import { CalorieCard } from '../components/CalorieCard'
@@ -49,7 +50,7 @@ export function TodayScreen({ token, date, onDateChange, reloadKey, goals }: Pro
   }, [token, date, reloadKey, localReload])
 
   async function handleDelete(meal: MealRecord) {
-    const label = meal.memo || meal.note || meal.mealType
+    const label = mealLabel(meal)
     if (!window.confirm(`「${label}」を削除しますか？`)) return
     try {
       await deleteMeal(token, meal.timestamp)

@@ -38,13 +38,15 @@ export function MealList({ meals, onDelete, title = '本日の食事記録' }: P
               <div className="flex-1 text-sm font-medium">{type}</div>
               <div className="text-[15px] font-semibold text-brand">{total} kcal</div>
             </div>
-            {items.map((meal) => (
+            {items.map((meal) => {
+              const label = mealLabel(meal)
+              return (
               <div key={meal.timestamp} className="flex items-center py-1.5 pl-12 pr-1 gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-gray-700 leading-snug truncate">
-                    {mealLabel(meal)}
+                    {label}
                   </div>
-                  {meal.memo && meal.note && (
+                  {meal.note && meal.note !== label && (
                     <div className="text-[11px] text-gray-400 leading-snug truncate">{meal.note}</div>
                   )}
                 </div>
@@ -59,7 +61,8 @@ export function MealList({ meals, onDelete, title = '本日の食事記録' }: P
                   </button>
                 )}
               </div>
-            ))}
+              )
+            })}
           </div>
         )
       })}
