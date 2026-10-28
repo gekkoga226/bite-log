@@ -1,24 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#007AFF"/>
-      <stop offset="1" stop-color="#5856D6"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF9F43"/>
+      <stop offset="0.55" stop-color="#FF5E57"/>
+      <stop offset="1" stop-color="#FF2D78"/>
     </linearGradient>
+    <mask id="bite">
+      <rect width="512" height="512" fill="#fff"/>
+      <circle cx="397" cy="219" r="42" fill="#000"/>
+      <circle cx="362" cy="164" r="44" fill="#000"/>
+      <circle cx="307" cy="129" r="42" fill="#000"/>
+    </mask>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#g)"/>
-  <!-- plate -->
-  <circle cx="256" cy="256" r="118" fill="none" stroke="#ffffff" stroke-width="20"/>
-  <circle cx="256" cy="256" r="70" fill="none" stroke="#ffffff" stroke-width="14" opacity="0.7"/>
-  <!-- fork -->
-  <g fill="#ffffff">
-    <rect x="120" y="118" width="14" height="120" rx="7"/>
-    <rect x="146" y="118" width="14" height="120" rx="7"/>
-    <rect x="172" y="118" width="14" height="120" rx="7"/>
-    <rect x="146" y="220" width="14" height="174" rx="7"/>
-    <path d="M120 118 q33 60 66 0 q0 70 -26 102 l0 174 -14 0 0 -174 q-26 -32 -26 -102 z"/>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <g mask="url(#bite)">
+    <circle cx="262" cy="284" r="150" fill="#000" opacity="0.14"/>
+    <circle cx="256" cy="270" r="150" fill="#fff"/>
+    <circle cx="256" cy="270" r="100" fill="none" stroke="#FFE1D6" stroke-width="16"/>
   </g>
-  <!-- knife -->
-  <g fill="#ffffff">
-    <path d="M372 118 q40 40 24 150 q-6 40 -24 44 l0 82 -14 0 0 -276 z"/>
-  </g>
+  <!-- AI sparkle in the bitten gap -->
+  <path d="M404 96 C409 124 416 131 444 136 C416 141 409 148 404 176 C399 148 392 141 364 136 C392 131 399 124 404 96 Z" fill="#FFF3B0"/>
+  <path d="M446 190 C448 201 451 204 462 206 C451 208 448 211 446 222 C444 211 441 208 430 206 C441 204 444 201 446 190 Z" fill="#FFF3B0" opacity="0.85"/>
 </svg>
